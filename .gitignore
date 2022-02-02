@@ -1,0 +1,6 @@
+*.csv
+*.pkl
+*.dta
+results/
+results_2stage/
+.ipynb_checkpoints/

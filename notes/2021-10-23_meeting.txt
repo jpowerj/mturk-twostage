@@ -1,0 +1,17 @@
+Old method
+
+vs
+
+New method
+
+Recruitment vs. Retention
+
+* Issue: Old JS doesn't work anymore, the JS code we used now crashes the page, gives an error
+
+Image tagging:
+
+* We can have all the images be images where we already know the correct tags, goal here is to just get people to do work. So we can also compute accuracy rates
+
+New pilot, 10 HITs, no essay
+--> Randomly choose {0.50, 1.50}
+

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>HIT Preview</title>
+
+<!-- For help on using this template, see the blog post: https://blog.mturk.com/editing-the-survey-link-project-template-in-the-ui-7c75285105fb#.py7towsdx -->
+<!-- HIT template: SurveyLink-v3.0 -->
+<!-- The following snippet enables the 'responsive' behavior on smaller screens -->
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+</head>
+<body>
+<section class="container" id="SurveyContainer">
+  <div class="row">
+    <div class="col-xs-12 col-md-12">
+      <div class="panel-body" id="instructionBody">
+        <p>We are conducting an academic survey about the conditions of the modern workplace.</p>
+
+        <p>Please <strong>accept the HIT</strong> and then answer a few quick questions about yourself below. Then, if you'd like to do an additional 10-15 minute survey for a <strong>bonus of <span class="bonus" id="bonusAmt1">(accept HIT to reveal bonus)</span></strong> on top of the $0.10 base pay, please accept the offer to proceed to the survey. Otherwise, to reject the offer and receive the base pay of $0.10, click the blue <strong>&quot;Submit&quot;</strong> button at the bottom of the page.</p>
+
+        <p>Whether or not you accept the bonus offer, <strong>you may not submit more than one HIT.</strong> Additional HIT requests will be rejected.</p>
+      </div>
+    </div>
+  </div>
+  <!-- Survey Link Layout -->
+  <div class="row" id="workContent">
+    <div class="col-xs-12 col-md-8 col-md-offset-2">
+      <!-- Content for Worker -->
+      <table class="table table-bordered">
+        <colgroup>
+          <col class="col-xs-5 col-md-5" />
+          <col class="col-xs-7 col-md-7" />
+        </colgroup>
+        <tbody>
+          <tr id="ageTr">
+            <td><label for="age">Please enter your age, in years:</label></td>
+            <td><input class="form-control" id="age" name="age" required="" type="text" /></td>
+          </tr>
+          <tr id="onlineTr">
+            <td><label for="onlinehrs">Hours per week spent online doing tasks for money:</label></td>
+            <td><input class="form-control" id="onlinehrs" name="onlinehrs" type="text" /></td>
+          </tr>
+          <tr id="reasonTr">
+            <td><label for="reason">Primary reason for participation:</label></td>
+            <td>
+                <select class="form-control" id="reason" name="reason">
+                    <option disabled="disabled" hidden="" selected="selected" value="">-- Please select an option --</option>
+                    <option value="money">Make money</option>
+                    <option value="skills">Learn new skills</option>
+                    <option value="fun">Have fun</option>
+                </select>
+            </td>
+          </tr>
+          <tr id="offerTr">
+            <td id="nextLabel"><strong>Are you willing to take an additional 10-15 minute survey for a bonus of <span class="bonus" id="bonusAmt2">(accept HIT to reveal amount)</span>?</strong></td>
+            <td id="nextButtonTd">
+              <input type="radio" id="yesRadio" name="acceptOffer" value="yes" disabled>
+              <label for="yesRadio">Yes</label><br>
+              <input type="radio" id="noRadio" name="acceptOffer" value="no" disabled>
+              <label for="noRadio">No</label><br>
+            </input>
+              </td>
+          </tr>
+          <tr id="finishSurveyTr" style="display:none;">
+            <td></td>
+            <td>Thank you for completing the HIT. Please click the blue "Submit" button below to finish. Your submission will be approved within 24 hours.</td>
+          </tr>
+          <tr id="linkTr" style="display: none;">
+              <td id="linkLabelTd"><label for="surveyLink">Survey Link:</label></td>
+              <td id="linkTd"><a id="surveyLink" href="#">Click here to begin the survey</span></td>
+          </tr>
+          <tr id="codeTr" style="display: none;">
+              <td id="codeLabelTd"><label for="codeInput">Survey Completion Code:</label></td>
+              <td id="codeInputTd"><input type="text" id="codeInput" name="surveyCode" style="width: 100%;"></td>
+          </tr>
+        </tbody>
+      </table>
+    <!-- End Content for Worker -->
+    </div>
+  </div>
+<!-- End Survey Link Layout -->
+</section>
+<!-- Please note that Bootstrap CSS/JS and JQuery are 3rd party libraries that may update their url/code at any time. Amazon Mechanical Turk (MTurk) is including these libraries as a default option for you, but is not responsible for any changes to the external libraries -->
+<!-- External CSS references -->
+<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" integrity="sha384-IS73LIqjtYesmURkDE9MXKbXqYA8rvKEp/ghicjem7Vc3mGRdQRptJSz60tvrB6+" rel="stylesheet" />
+<!-- Open internal style sheet -->
+<style type="text/css">
+#collapseTrigger {
+  color:#fff;
+  display: block;
+  text-decoration: none;
+}
+.image{
+  margin-bottom: 15px; 
+}
+/* CSS for breaking long words/urls */
+.dont-break-out {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+</style>
+<!-- Close internal style sheet -->
+<!-- External JS references -->
+<script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="   crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script>
+<!-- Internal JS -->
+<script>
+$(document).ready(function() {
+    var base_url = "https://cumc.co1.qualtrics.com/jfe/form/SV_5zhwsZwgkZZPbCu";
+    function idToWage(dbId) {
+        var wages = ['$0.50', '$0.90', '$0.95', '$0.98', '$0.99', '$1.00',
+                      '$1.01', '$1.02', '$1.05', '$1.10', '$1.50'];
+        var index = dbId % wages.length;
+        return wages[index];
+    }
+    // Fill in the bonus amt if they've accepted
+    var paramstr = window.location.search.substring(1);
+    var parampairs = paramstr.split("&");
+    var cur_mtid = "";
+    for (i in parampairs) {
+        var pair = parampairs[i].split("=");
+        if (pair[0] == "workerId")
+        cur_mtid = pair[1];
+    }
+    console.log("cur_mtid: " + cur_mtid)
+    if (cur_mtid != "" ) {
+        $(".bonus").text("(Loading bonus...)");
+        // Get the bonus amt for this worker
+        // First check if their ID is in the DB
+        var checkUrl = "https://jjacobs.info/user_in_db.php";
+        console.log("Checking mtid " + cur_mtid);
+        var isInDB = false;
+        var inDBWage = "";
+        var queryResult = $.ajax({
+            url: checkUrl,
+            data: {'mtid':cur_mtid},
+            success: function (result) {
+                console.log( "Query Result: " + result );
+                if (result != "False") {
+                    isInDB = true;
+                    inDBWage = result;
+                }
+            },
+            async: false
+        });
+        console.log("isInDB? " + isInDB);
+        // Now add if it's not already in DB
+        if (isInDB) {
+            //$("#loadAnim").hide();
+            var wageForId = idToWage(inDBWage);
+            //$("#resultDiv").text(wageForId);
+            $(".bonus").text(wageForId);
+            $("#yesRadio").prop("disabled",false);
+            $("#noRadio").prop("disabled",false);
+            $("#surveyLink").attr("href",base_url + "?offer=" + wageForId + "&mt_id=" + cur_mtid);
+            $("#surveyLink").attr("target","_blank");
+        } else {
+            var cur_timestamp = Date.now().toString();
+            //var cur_mtid = turkGetParam("workerId");
+            // Register the user
+            var ajaxUrl = "https://jjacobs.info/register_restdb.php";
+            console.log("register_restdb: mtid " + cur_mtid + ", timestamp " + cur_timestamp);
+            $.ajax({
+                url: ajaxUrl,
+                data: {mtid: cur_mtid, timestamp: cur_timestamp},
+                success: function (result) {
+                    //$("loadAnim").hide();
+                    console.log( "Post Result: " + result );
+                    var wageForId = idToWage(result);
+                    $(".bonus").text(wageForId);
+                    $("#yesRadio").prop("disabled",false);
+                    $("#noRadio").prop("disabled",false);
+                    $("#surveyLink").attr("href",base_url + "?offer=" + wageForId + "&mt_id=" + cur_mtid);
+                    $("#surveyLink").attr("target","_blank");
+                    //return true;
+                },
+                async: false
+            });
+        }
+    }
+    var bonusInstr = `<p><strong>Thank you for accepting the bonus offer!</strong> At the end of the survey you will receive a code to paste into the box below to receive credit for successful completion of the bonus portion.</p>
+
+<p><strong>Make sure to leave this window open as you complete the survey. </strong> When you are finished you will receive a survey completion code, and you must return to this page and paste this code into the box below to receive the HIT reward (along with any bonus amount earned for answering additional survey questions).</p>
+
+<p>(Remember that <strong>you may not submit more than one HIT.</strong> Additional HIT requests will be rejected.)</p>
+
+<p id="pleaseClick">Please click the link below to begin the survey.</p>`;
+
+    $("#noRadio").click(function() {
+      $("#offerTr").hide();
+      $("#finishSurveyTr").show();
+    });
+    
+    $("#yesRadio").click(function(){
+        // Hide the questions they already answered
+        //$("#ageTr").hide();
+        //$("#onlineTr").hide();
+        //$("#reasonTr").hide();
+        //$("#nextTr").hide();
+        // Just in case
+        $("#finishSurveyTr").hide();
+        $("#nextButtonTd").text("Thank you for accepting the offer!");
+        // And show the new stuff
+        $("#instructionBody").html(bonusInstr);
+        $("#linkTr").show();
+        $("#codeTr").show();
+        return true;
+    });
+});
+</script>
+<!-- Close internal JS -->
+</body>
+</html>

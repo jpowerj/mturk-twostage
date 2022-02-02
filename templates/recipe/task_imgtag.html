@@ -1,0 +1,20 @@
+<!-- Page !page_num! (Task #!task_num!) -->
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-!page_num!">
+    <h2>Task #!task_num!</h2>
+    <div class="col-xs-12 col-md-12 col-centered">
+    <div id="prev_div">
+    <p><label for="prev_checkbox!task_num!"><input id="prev_checkbox!task_num!" name="contd_prev!task_num!" type="checkbox" />The first recipe on this page looks like it&#39;s continued from a previous page.</label></p>
+    </div>
+    <canvas id="task!task_num!"></canvas>
+    <input id="box_data_!task_num!" name="box_data_!task_num!" type="hidden" />
+    <input id="img_width_!task_num!" name="img_width_!task_num!" type="hidden" />
+    <input id="img_height_!task_num!" name="img_height_!task_num!" type="hidden" />
+    <div id="next_div">
+    <p><label for="next_checkbox!task_num!"><input id="next_checkbox!task_num!" name="contd_next!task_num!" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+    </div>
+    <div id="no_text_div">
+    <p><label for="no_text_checkbox!task_num!"><input id="no_text_checkbox!task_num!" name="no_text!task_num!" type="checkbox" />There are no recipes on this page.</label></p>
+    </div></div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="next!task_num!" rel="!next_page!" title="!next_title!">Next Page &raquo;</a></div>
+    <!-- End Page !page_num! (Task #!task_num!) -->

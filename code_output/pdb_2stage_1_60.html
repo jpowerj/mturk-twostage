@@ -1,0 +1,1413 @@
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!--<script src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script>-->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+    function addRow(taskNum) {
+        // First, don't allow more than 100 items?
+        //var entList = $("#entlist");
+        //console.log(entList);
+        var entListSelector = "#entlist" + taskNum;
+        // Get last item
+        var lastLi = $(entListSelector + " li:nth-last-child(2)");
+        console.log(lastLi);
+        // The last <input> is the first child of the lastLi
+        var lastInput = lastLi.first();
+        console.log(lastInput);
+        var lastId = lastInput.attr('id');
+        // Add one to the num
+        var lastNum = parseInt(lastId.slice(-1));
+        var newNum = lastNum + 1;
+        var newLiId = "item" + newNum;
+        var newLi = $("<li>").attr('id', newLiId);
+        var newInputId = "ent" + newNum;
+        var newInput = $("<input>").attr('id', newInputId);
+        var newRemoveId = "remove" + newNum;
+        var removeButton = $("<button>").attr('id', newRemoveId).text("X").click(
+            function() {
+                var clickedElt = $(this);
+                return removeRow(clickedElt);
+            }
+        );
+        newLi.append(newInput);
+        newLi.append(removeButton);
+        lastLi.after(newLi);
+        return false;
+    }
+    function removeRow(clickedElt) {
+        // Get clicked button
+        var clickedParent = clickedElt.parent();
+        console.log(clickedParent);
+        clickedParent.remove();
+        return false;
+    }
+    $(document).ready(function(){
+        var num_tabs = 65;
+        var num_tasks = 61;
+        var first_task_page = 3;
+        var $tabs = $( "#tabs" ).tabs();
+    // unselect all of the radio buttons
+    $("#submitButton").hide();
+    $("input").prop("checked",false);
+    $("#show-hide-instructions").click(function () {
+        if ($(".panel-body").is(":visible")) {
+            $(".panel-body").hide();
+            $(this).html("Show");
+        } else {
+            $(".panel-body").show();
+            $(this).html("Hide");
+        }
+        return false;
+    });
+    $("#submit-consent").click(function(){
+        var assignmentId = turkGetParam('assignmentId', '');
+        if (turkGetParam('assignmentId', '') == '' || turkGetParam('assignmentId', '') == 'ASSIGNMENT_ID_NOT_AVAILABLE') {
+            alert("Please accept the HIT before continuing");
+            return false;
+        } else {
+            if ($("#consent").is(":checked")){
+                $tabs.tabs('option', 'active', $(this).attr("rel"));
+                // Uncomment these two lines to hide the instructions once the user accepts the consent form
+                //$(".panel-body").hide();
+                //$("#show-hide-instructions").html("Show");
+            } else {
+                alert("You must agree to the consent statement in order to perform this HIT");
+                return false;
+            }
+        }
+    });
+
+    $("#submit-demographic").click(function(){
+        if (!$.isNumeric($("#age").val())){
+            alert("Please enter a numeric value for the 'Age' field");
+            return false;
+        } else {
+            $tabs.tabs('option', 'active', $(this).attr("rel"));
+        }
+    });
+
+    $(".submit-page").click(function(){
+        // Next, check if the next page is an offer, an additional page, or finished
+        var this_id = $(this).attr("id");
+        var this_tabnum = this_id.split("-").slice(-1);
+        console.log("Submitting tab #" + this_tabnum);
+        var next_tab = $(this).attr("rel");
+        var final_tab = $(this).attr("title");
+        if (this_tabnum == first_task_page) {
+            // First image submitted, go to the next tab but show the submit button
+            $tabs.tabs('option', 'active', next_tab);
+            $("#submitButton").show();
+        //} else if (submitted_num == num_images) {
+        //    // Final image submitted, go to finished page and show the submit button
+        //    $tabs.tabs('select', final_tab);
+        //    $("#submitButton").show();
+        } else {
+            // Just show next image
+            $tabs.tabs('option', 'active', next_tab);
+        }
+    });
+
+    $("#back-to-page").click(function(){
+        $tabs.tabs('option', 'active', $(this).attr("rel"));
+        $("#submitButton").hide();
+    });
+
+    $(".accept-offer").click(function(){
+        $tabs.tabs('option', 'active', $(this).attr("rel"));
+        $("#submitButton").hide();
+        var offer_num = $(this).attr("title");
+        var offer_input_id = "accepted-" + offer_num;
+        document.getElementById(offer_input_id).value = "yes";
+    });
+});
+
+</script><section class="container" id="TaskInstructions">
+    <!-- Instructions -->
+    <a name="instructions-top"></a>
+    <div class="row col-xs-12 col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <strong>Instructions</strong>
+                <span> [<a href="#" id="show-hide-instructions">Hide</a>] </span>
+            </div>
+
+            <div class="panel-body" id="instructionBody">
+                <p><strong>Click and drag on the scanned page to create boxes around each&nbsp;unique&nbsp;recipe&nbsp;on the page</strong>. Then use the checkboxes before and after the image to specify whether the first recipe on the image looks like it's the continuation of a previous page, and whether it looks like the last recipe continues onto the next page.</p>
+            
+                <p>A <b>recipe</b> in this case includes <strong>a title, a list of ingredients, and directions</strong>. Please try to include all of these elements within the rectangles you draw. If one of the recipes is incomplete (for example, if it is continued from the prior page or continues onto the next page), capture as much of the recipe as you can within the rectangle.</p>
+            
+                <ul>
+                    <li style="margin-left: 15px;">Click and drag on the image to add a rectangle</li>
+                    <li style="margin-left: 15px;">Click on a rectangle and press Delete or Backspace to remove the rectangle</li>
+                    <li style="margin-left: 15px;">Use the corners to resize the rectangle</li>
+                    <li style="margin-left: 15px;">Note that the app will not allow you to create a new rectangle which overlaps an existing rectangle</li>
+                </ul>
+                <span><strong>If there are no recipes on the page</strong>, check the "There are no recipes on this page" box at the bottom before submitting.</span>
+            </div>
+        </div>
+    </div>
+    <!-- End Instructions -->
+</section>
+
+<div id="page-wrap">
+    <a name="tabs"></a>
+
+    <div id="tabs">
+        <div id="hiddenbatchid" style="display: none;">${batch_id}</div>
+
+        <div id="hiddenhittype" style="display: none;">${hit_type}</div>
+
+        <div id="hiddendiv" style="display: none;">
+            <ul>
+                <li><a href="#tabs-1">Consent Form</a></li>
+<li><a href="#tabs-2">Demographic Survey</a></li>
+<li><a href="#tabs-3">Page 3 (Stage 1, Task 1)</a></li>
+<li><a href="#tabs-4">Additional Tasks Offer</a></li>
+<li><a href="#tabs-5">Page 5 (Stage 2, Task 2)</a></li>
+<li><a href="#tabs-6">Page 6 (Stage 2, Task 3)</a></li>
+<li><a href="#tabs-7">Page 7 (Stage 2, Task 4)</a></li>
+<li><a href="#tabs-8">Page 8 (Stage 2, Task 5)</a></li>
+<li><a href="#tabs-9">Page 9 (Stage 2, Task 6)</a></li>
+<li><a href="#tabs-10">Page 10 (Stage 2, Task 7)</a></li>
+<li><a href="#tabs-11">Page 11 (Stage 2, Task 8)</a></li>
+<li><a href="#tabs-12">Page 12 (Stage 2, Task 9)</a></li>
+<li><a href="#tabs-13">Page 13 (Stage 2, Task 10)</a></li>
+<li><a href="#tabs-14">Page 14 (Stage 2, Task 11)</a></li>
+<li><a href="#tabs-15">Page 15 (Stage 2, Task 12)</a></li>
+<li><a href="#tabs-16">Page 16 (Stage 2, Task 13)</a></li>
+<li><a href="#tabs-17">Page 17 (Stage 2, Task 14)</a></li>
+<li><a href="#tabs-18">Page 18 (Stage 2, Task 15)</a></li>
+<li><a href="#tabs-19">Page 19 (Stage 2, Task 16)</a></li>
+<li><a href="#tabs-20">Page 20 (Stage 2, Task 17)</a></li>
+<li><a href="#tabs-21">Page 21 (Stage 2, Task 18)</a></li>
+<li><a href="#tabs-22">Page 22 (Stage 2, Task 19)</a></li>
+<li><a href="#tabs-23">Page 23 (Stage 2, Task 20)</a></li>
+<li><a href="#tabs-24">Page 24 (Stage 2, Task 21)</a></li>
+<li><a href="#tabs-25">Page 25 (Stage 2, Task 22)</a></li>
+<li><a href="#tabs-26">Page 26 (Stage 2, Task 23)</a></li>
+<li><a href="#tabs-27">Page 27 (Stage 2, Task 24)</a></li>
+<li><a href="#tabs-28">Page 28 (Stage 2, Task 25)</a></li>
+<li><a href="#tabs-29">Page 29 (Stage 2, Task 26)</a></li>
+<li><a href="#tabs-30">Page 30 (Stage 2, Task 27)</a></li>
+<li><a href="#tabs-31">Page 31 (Stage 2, Task 28)</a></li>
+<li><a href="#tabs-32">Page 32 (Stage 2, Task 29)</a></li>
+<li><a href="#tabs-33">Page 33 (Stage 2, Task 30)</a></li>
+<li><a href="#tabs-34">Page 34 (Stage 2, Task 31)</a></li>
+<li><a href="#tabs-35">Page 35 (Stage 2, Task 32)</a></li>
+<li><a href="#tabs-36">Page 36 (Stage 2, Task 33)</a></li>
+<li><a href="#tabs-37">Page 37 (Stage 2, Task 34)</a></li>
+<li><a href="#tabs-38">Page 38 (Stage 2, Task 35)</a></li>
+<li><a href="#tabs-39">Page 39 (Stage 2, Task 36)</a></li>
+<li><a href="#tabs-40">Page 40 (Stage 2, Task 37)</a></li>
+<li><a href="#tabs-41">Page 41 (Stage 2, Task 38)</a></li>
+<li><a href="#tabs-42">Page 42 (Stage 2, Task 39)</a></li>
+<li><a href="#tabs-43">Page 43 (Stage 2, Task 40)</a></li>
+<li><a href="#tabs-44">Page 44 (Stage 2, Task 41)</a></li>
+<li><a href="#tabs-45">Page 45 (Stage 2, Task 42)</a></li>
+<li><a href="#tabs-46">Page 46 (Stage 2, Task 43)</a></li>
+<li><a href="#tabs-47">Page 47 (Stage 2, Task 44)</a></li>
+<li><a href="#tabs-48">Page 48 (Stage 2, Task 45)</a></li>
+<li><a href="#tabs-49">Page 49 (Stage 2, Task 46)</a></li>
+<li><a href="#tabs-50">Page 50 (Stage 2, Task 47)</a></li>
+<li><a href="#tabs-51">Page 51 (Stage 2, Task 48)</a></li>
+<li><a href="#tabs-52">Page 52 (Stage 2, Task 49)</a></li>
+<li><a href="#tabs-53">Page 53 (Stage 2, Task 50)</a></li>
+<li><a href="#tabs-54">Page 54 (Stage 2, Task 51)</a></li>
+<li><a href="#tabs-55">Page 55 (Stage 2, Task 52)</a></li>
+<li><a href="#tabs-56">Page 56 (Stage 2, Task 53)</a></li>
+<li><a href="#tabs-57">Page 57 (Stage 2, Task 54)</a></li>
+<li><a href="#tabs-58">Page 58 (Stage 2, Task 55)</a></li>
+<li><a href="#tabs-59">Page 59 (Stage 2, Task 56)</a></li>
+<li><a href="#tabs-60">Page 60 (Stage 2, Task 57)</a></li>
+<li><a href="#tabs-61">Page 61 (Stage 2, Task 58)</a></li>
+<li><a href="#tabs-62">Page 62 (Stage 2, Task 59)</a></li>
+<li><a href="#tabs-63">Page 63 (Stage 2, Task 60)</a></li>
+<li><a href="#tabs-64">Page 64 (Stage 2, Task 61)</a></li>
+<li><a href="#tabs-65">Finished</a></li>
+
+            </ul>
+        </div>
+ <!-- Page 1 (IRB notice) -->
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-1">
+    <div class="col-xs-12 col-md-12 col-centered">
+        Click "Next Page" to proceed
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="1" rel="2">Next Page &raquo;</a>
+</div>
+<!-- End Page 1 (IRB notice) -->
+        <!-- Page 2 (Instructions) -->
+        <div class="ui-tabs-panel ui-tabs-hide" id="tabs-2">
+            <div class="col-xs-12 col-md-12 col-centered">
+                Instructions:
+            </div>
+            <div>&nbsp;</div>
+            <a class="next-tab mover submit-page" href="#instructions-top" id="next2" rel="3" title="!next_title!">Next Page &raquo;</a>
+        </div>
+        <!-- End Page 2 (Instructions) -->
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-3">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #1</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist1">
+                <li id="t1item1"><input type="text" id="t1ent1"></li>
+                <li id="t1item2"><input type="text" id="t1ent2"></li>
+                <li id="t1item3"><input type="text" id="t1ent3"><br></li>
+                <li id="t1item4"><input type="text" id="t1ent4"><br></li>
+                <li id="t1item5"><input type="text" id="t1ent5"><br></li>
+                <li style="list-style-type:none;" id="t1itemAddNew"><a href="#" onclick="addRow(1); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="3" rel="4">Next Page &raquo;</a>
+</div>
+        <!-- Page 4 (Offer) -->
+        <div class="ui-tabs-panel ui-tabs-hide" id="tabs-4">
+        <h3>If you&#39;d like to continue and perform ${hit_type} additional recipe location tasks for ${offer_amt}, please click &quot;Next Page&quot; below.</h3>
+        <h3>Otherwise, click the &quot;Submit&quot; button at the bottom of the page.</h3>
+        <div>&nbsp;</div>
+        <input type="hidden" name="accepted-4" id="accepted-4"/>
+        <a class="next-tab mover accept-offer" href="#instructions-top" id="accept-4" rel="5">Next Page &raquo;</a></div>
+        <!-- End Page 4 (Offer) -->
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-5">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #2</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist2">
+                <li id="t2item1"><input type="text" id="t2ent1"></li>
+                <li id="t2item2"><input type="text" id="t2ent2"></li>
+                <li id="t2item3"><input type="text" id="t2ent3"><br></li>
+                <li id="t2item4"><input type="text" id="t2ent4"><br></li>
+                <li id="t2item5"><input type="text" id="t2ent5"><br></li>
+                <li style="list-style-type:none;" id="t2itemAddNew"><a href="#" onclick="addRow(2); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="5" rel="6">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-6">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #3</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist3">
+                <li id="t3item1"><input type="text" id="t3ent1"></li>
+                <li id="t3item2"><input type="text" id="t3ent2"></li>
+                <li id="t3item3"><input type="text" id="t3ent3"><br></li>
+                <li id="t3item4"><input type="text" id="t3ent4"><br></li>
+                <li id="t3item5"><input type="text" id="t3ent5"><br></li>
+                <li style="list-style-type:none;" id="t3itemAddNew"><a href="#" onclick="addRow(3); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="6" rel="7">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-7">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #4</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist4">
+                <li id="t4item1"><input type="text" id="t4ent1"></li>
+                <li id="t4item2"><input type="text" id="t4ent2"></li>
+                <li id="t4item3"><input type="text" id="t4ent3"><br></li>
+                <li id="t4item4"><input type="text" id="t4ent4"><br></li>
+                <li id="t4item5"><input type="text" id="t4ent5"><br></li>
+                <li style="list-style-type:none;" id="t4itemAddNew"><a href="#" onclick="addRow(4); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="7" rel="8">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-8">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #5</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist5">
+                <li id="t5item1"><input type="text" id="t5ent1"></li>
+                <li id="t5item2"><input type="text" id="t5ent2"></li>
+                <li id="t5item3"><input type="text" id="t5ent3"><br></li>
+                <li id="t5item4"><input type="text" id="t5ent4"><br></li>
+                <li id="t5item5"><input type="text" id="t5ent5"><br></li>
+                <li style="list-style-type:none;" id="t5itemAddNew"><a href="#" onclick="addRow(5); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="8" rel="9">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-9">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #6</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist6">
+                <li id="t6item1"><input type="text" id="t6ent1"></li>
+                <li id="t6item2"><input type="text" id="t6ent2"></li>
+                <li id="t6item3"><input type="text" id="t6ent3"><br></li>
+                <li id="t6item4"><input type="text" id="t6ent4"><br></li>
+                <li id="t6item5"><input type="text" id="t6ent5"><br></li>
+                <li style="list-style-type:none;" id="t6itemAddNew"><a href="#" onclick="addRow(6); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="9" rel="10">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-10">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #7</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist7">
+                <li id="t7item1"><input type="text" id="t7ent1"></li>
+                <li id="t7item2"><input type="text" id="t7ent2"></li>
+                <li id="t7item3"><input type="text" id="t7ent3"><br></li>
+                <li id="t7item4"><input type="text" id="t7ent4"><br></li>
+                <li id="t7item5"><input type="text" id="t7ent5"><br></li>
+                <li style="list-style-type:none;" id="t7itemAddNew"><a href="#" onclick="addRow(7); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="10" rel="11">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-11">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #8</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist8">
+                <li id="t8item1"><input type="text" id="t8ent1"></li>
+                <li id="t8item2"><input type="text" id="t8ent2"></li>
+                <li id="t8item3"><input type="text" id="t8ent3"><br></li>
+                <li id="t8item4"><input type="text" id="t8ent4"><br></li>
+                <li id="t8item5"><input type="text" id="t8ent5"><br></li>
+                <li style="list-style-type:none;" id="t8itemAddNew"><a href="#" onclick="addRow(8); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="11" rel="12">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-12">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #9</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist9">
+                <li id="t9item1"><input type="text" id="t9ent1"></li>
+                <li id="t9item2"><input type="text" id="t9ent2"></li>
+                <li id="t9item3"><input type="text" id="t9ent3"><br></li>
+                <li id="t9item4"><input type="text" id="t9ent4"><br></li>
+                <li id="t9item5"><input type="text" id="t9ent5"><br></li>
+                <li style="list-style-type:none;" id="t9itemAddNew"><a href="#" onclick="addRow(9); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="12" rel="13">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-13">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #10</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist10">
+                <li id="t10item1"><input type="text" id="t10ent1"></li>
+                <li id="t10item2"><input type="text" id="t10ent2"></li>
+                <li id="t10item3"><input type="text" id="t10ent3"><br></li>
+                <li id="t10item4"><input type="text" id="t10ent4"><br></li>
+                <li id="t10item5"><input type="text" id="t10ent5"><br></li>
+                <li style="list-style-type:none;" id="t10itemAddNew"><a href="#" onclick="addRow(10); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="13" rel="14">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-14">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #11</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist11">
+                <li id="t11item1"><input type="text" id="t11ent1"></li>
+                <li id="t11item2"><input type="text" id="t11ent2"></li>
+                <li id="t11item3"><input type="text" id="t11ent3"><br></li>
+                <li id="t11item4"><input type="text" id="t11ent4"><br></li>
+                <li id="t11item5"><input type="text" id="t11ent5"><br></li>
+                <li style="list-style-type:none;" id="t11itemAddNew"><a href="#" onclick="addRow(11); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="14" rel="15">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-15">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #12</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist12">
+                <li id="t12item1"><input type="text" id="t12ent1"></li>
+                <li id="t12item2"><input type="text" id="t12ent2"></li>
+                <li id="t12item3"><input type="text" id="t12ent3"><br></li>
+                <li id="t12item4"><input type="text" id="t12ent4"><br></li>
+                <li id="t12item5"><input type="text" id="t12ent5"><br></li>
+                <li style="list-style-type:none;" id="t12itemAddNew"><a href="#" onclick="addRow(12); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="15" rel="16">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-16">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #13</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist13">
+                <li id="t13item1"><input type="text" id="t13ent1"></li>
+                <li id="t13item2"><input type="text" id="t13ent2"></li>
+                <li id="t13item3"><input type="text" id="t13ent3"><br></li>
+                <li id="t13item4"><input type="text" id="t13ent4"><br></li>
+                <li id="t13item5"><input type="text" id="t13ent5"><br></li>
+                <li style="list-style-type:none;" id="t13itemAddNew"><a href="#" onclick="addRow(13); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="16" rel="17">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-17">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #14</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist14">
+                <li id="t14item1"><input type="text" id="t14ent1"></li>
+                <li id="t14item2"><input type="text" id="t14ent2"></li>
+                <li id="t14item3"><input type="text" id="t14ent3"><br></li>
+                <li id="t14item4"><input type="text" id="t14ent4"><br></li>
+                <li id="t14item5"><input type="text" id="t14ent5"><br></li>
+                <li style="list-style-type:none;" id="t14itemAddNew"><a href="#" onclick="addRow(14); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="17" rel="18">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-18">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #15</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist15">
+                <li id="t15item1"><input type="text" id="t15ent1"></li>
+                <li id="t15item2"><input type="text" id="t15ent2"></li>
+                <li id="t15item3"><input type="text" id="t15ent3"><br></li>
+                <li id="t15item4"><input type="text" id="t15ent4"><br></li>
+                <li id="t15item5"><input type="text" id="t15ent5"><br></li>
+                <li style="list-style-type:none;" id="t15itemAddNew"><a href="#" onclick="addRow(15); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="18" rel="19">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-19">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #16</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist16">
+                <li id="t16item1"><input type="text" id="t16ent1"></li>
+                <li id="t16item2"><input type="text" id="t16ent2"></li>
+                <li id="t16item3"><input type="text" id="t16ent3"><br></li>
+                <li id="t16item4"><input type="text" id="t16ent4"><br></li>
+                <li id="t16item5"><input type="text" id="t16ent5"><br></li>
+                <li style="list-style-type:none;" id="t16itemAddNew"><a href="#" onclick="addRow(16); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="19" rel="20">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-20">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #17</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist17">
+                <li id="t17item1"><input type="text" id="t17ent1"></li>
+                <li id="t17item2"><input type="text" id="t17ent2"></li>
+                <li id="t17item3"><input type="text" id="t17ent3"><br></li>
+                <li id="t17item4"><input type="text" id="t17ent4"><br></li>
+                <li id="t17item5"><input type="text" id="t17ent5"><br></li>
+                <li style="list-style-type:none;" id="t17itemAddNew"><a href="#" onclick="addRow(17); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="20" rel="21">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-21">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #18</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist18">
+                <li id="t18item1"><input type="text" id="t18ent1"></li>
+                <li id="t18item2"><input type="text" id="t18ent2"></li>
+                <li id="t18item3"><input type="text" id="t18ent3"><br></li>
+                <li id="t18item4"><input type="text" id="t18ent4"><br></li>
+                <li id="t18item5"><input type="text" id="t18ent5"><br></li>
+                <li style="list-style-type:none;" id="t18itemAddNew"><a href="#" onclick="addRow(18); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="21" rel="22">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-22">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #19</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist19">
+                <li id="t19item1"><input type="text" id="t19ent1"></li>
+                <li id="t19item2"><input type="text" id="t19ent2"></li>
+                <li id="t19item3"><input type="text" id="t19ent3"><br></li>
+                <li id="t19item4"><input type="text" id="t19ent4"><br></li>
+                <li id="t19item5"><input type="text" id="t19ent5"><br></li>
+                <li style="list-style-type:none;" id="t19itemAddNew"><a href="#" onclick="addRow(19); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="22" rel="23">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-23">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #20</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist20">
+                <li id="t20item1"><input type="text" id="t20ent1"></li>
+                <li id="t20item2"><input type="text" id="t20ent2"></li>
+                <li id="t20item3"><input type="text" id="t20ent3"><br></li>
+                <li id="t20item4"><input type="text" id="t20ent4"><br></li>
+                <li id="t20item5"><input type="text" id="t20ent5"><br></li>
+                <li style="list-style-type:none;" id="t20itemAddNew"><a href="#" onclick="addRow(20); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="23" rel="24">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-24">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #21</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist21">
+                <li id="t21item1"><input type="text" id="t21ent1"></li>
+                <li id="t21item2"><input type="text" id="t21ent2"></li>
+                <li id="t21item3"><input type="text" id="t21ent3"><br></li>
+                <li id="t21item4"><input type="text" id="t21ent4"><br></li>
+                <li id="t21item5"><input type="text" id="t21ent5"><br></li>
+                <li style="list-style-type:none;" id="t21itemAddNew"><a href="#" onclick="addRow(21); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="24" rel="25">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-25">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #22</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist22">
+                <li id="t22item1"><input type="text" id="t22ent1"></li>
+                <li id="t22item2"><input type="text" id="t22ent2"></li>
+                <li id="t22item3"><input type="text" id="t22ent3"><br></li>
+                <li id="t22item4"><input type="text" id="t22ent4"><br></li>
+                <li id="t22item5"><input type="text" id="t22ent5"><br></li>
+                <li style="list-style-type:none;" id="t22itemAddNew"><a href="#" onclick="addRow(22); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="25" rel="26">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-26">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #23</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist23">
+                <li id="t23item1"><input type="text" id="t23ent1"></li>
+                <li id="t23item2"><input type="text" id="t23ent2"></li>
+                <li id="t23item3"><input type="text" id="t23ent3"><br></li>
+                <li id="t23item4"><input type="text" id="t23ent4"><br></li>
+                <li id="t23item5"><input type="text" id="t23ent5"><br></li>
+                <li style="list-style-type:none;" id="t23itemAddNew"><a href="#" onclick="addRow(23); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="26" rel="27">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-27">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #24</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist24">
+                <li id="t24item1"><input type="text" id="t24ent1"></li>
+                <li id="t24item2"><input type="text" id="t24ent2"></li>
+                <li id="t24item3"><input type="text" id="t24ent3"><br></li>
+                <li id="t24item4"><input type="text" id="t24ent4"><br></li>
+                <li id="t24item5"><input type="text" id="t24ent5"><br></li>
+                <li style="list-style-type:none;" id="t24itemAddNew"><a href="#" onclick="addRow(24); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="27" rel="28">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-28">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #25</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist25">
+                <li id="t25item1"><input type="text" id="t25ent1"></li>
+                <li id="t25item2"><input type="text" id="t25ent2"></li>
+                <li id="t25item3"><input type="text" id="t25ent3"><br></li>
+                <li id="t25item4"><input type="text" id="t25ent4"><br></li>
+                <li id="t25item5"><input type="text" id="t25ent5"><br></li>
+                <li style="list-style-type:none;" id="t25itemAddNew"><a href="#" onclick="addRow(25); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="28" rel="29">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-29">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #26</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist26">
+                <li id="t26item1"><input type="text" id="t26ent1"></li>
+                <li id="t26item2"><input type="text" id="t26ent2"></li>
+                <li id="t26item3"><input type="text" id="t26ent3"><br></li>
+                <li id="t26item4"><input type="text" id="t26ent4"><br></li>
+                <li id="t26item5"><input type="text" id="t26ent5"><br></li>
+                <li style="list-style-type:none;" id="t26itemAddNew"><a href="#" onclick="addRow(26); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="29" rel="30">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-30">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #27</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist27">
+                <li id="t27item1"><input type="text" id="t27ent1"></li>
+                <li id="t27item2"><input type="text" id="t27ent2"></li>
+                <li id="t27item3"><input type="text" id="t27ent3"><br></li>
+                <li id="t27item4"><input type="text" id="t27ent4"><br></li>
+                <li id="t27item5"><input type="text" id="t27ent5"><br></li>
+                <li style="list-style-type:none;" id="t27itemAddNew"><a href="#" onclick="addRow(27); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="30" rel="31">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-31">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #28</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist28">
+                <li id="t28item1"><input type="text" id="t28ent1"></li>
+                <li id="t28item2"><input type="text" id="t28ent2"></li>
+                <li id="t28item3"><input type="text" id="t28ent3"><br></li>
+                <li id="t28item4"><input type="text" id="t28ent4"><br></li>
+                <li id="t28item5"><input type="text" id="t28ent5"><br></li>
+                <li style="list-style-type:none;" id="t28itemAddNew"><a href="#" onclick="addRow(28); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="31" rel="32">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-32">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #29</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist29">
+                <li id="t29item1"><input type="text" id="t29ent1"></li>
+                <li id="t29item2"><input type="text" id="t29ent2"></li>
+                <li id="t29item3"><input type="text" id="t29ent3"><br></li>
+                <li id="t29item4"><input type="text" id="t29ent4"><br></li>
+                <li id="t29item5"><input type="text" id="t29ent5"><br></li>
+                <li style="list-style-type:none;" id="t29itemAddNew"><a href="#" onclick="addRow(29); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="32" rel="33">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-33">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #30</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist30">
+                <li id="t30item1"><input type="text" id="t30ent1"></li>
+                <li id="t30item2"><input type="text" id="t30ent2"></li>
+                <li id="t30item3"><input type="text" id="t30ent3"><br></li>
+                <li id="t30item4"><input type="text" id="t30ent4"><br></li>
+                <li id="t30item5"><input type="text" id="t30ent5"><br></li>
+                <li style="list-style-type:none;" id="t30itemAddNew"><a href="#" onclick="addRow(30); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="33" rel="34">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-34">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #31</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist31">
+                <li id="t31item1"><input type="text" id="t31ent1"></li>
+                <li id="t31item2"><input type="text" id="t31ent2"></li>
+                <li id="t31item3"><input type="text" id="t31ent3"><br></li>
+                <li id="t31item4"><input type="text" id="t31ent4"><br></li>
+                <li id="t31item5"><input type="text" id="t31ent5"><br></li>
+                <li style="list-style-type:none;" id="t31itemAddNew"><a href="#" onclick="addRow(31); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="34" rel="35">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-35">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #32</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist32">
+                <li id="t32item1"><input type="text" id="t32ent1"></li>
+                <li id="t32item2"><input type="text" id="t32ent2"></li>
+                <li id="t32item3"><input type="text" id="t32ent3"><br></li>
+                <li id="t32item4"><input type="text" id="t32ent4"><br></li>
+                <li id="t32item5"><input type="text" id="t32ent5"><br></li>
+                <li style="list-style-type:none;" id="t32itemAddNew"><a href="#" onclick="addRow(32); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="35" rel="36">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-36">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #33</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist33">
+                <li id="t33item1"><input type="text" id="t33ent1"></li>
+                <li id="t33item2"><input type="text" id="t33ent2"></li>
+                <li id="t33item3"><input type="text" id="t33ent3"><br></li>
+                <li id="t33item4"><input type="text" id="t33ent4"><br></li>
+                <li id="t33item5"><input type="text" id="t33ent5"><br></li>
+                <li style="list-style-type:none;" id="t33itemAddNew"><a href="#" onclick="addRow(33); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="36" rel="37">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-37">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #34</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist34">
+                <li id="t34item1"><input type="text" id="t34ent1"></li>
+                <li id="t34item2"><input type="text" id="t34ent2"></li>
+                <li id="t34item3"><input type="text" id="t34ent3"><br></li>
+                <li id="t34item4"><input type="text" id="t34ent4"><br></li>
+                <li id="t34item5"><input type="text" id="t34ent5"><br></li>
+                <li style="list-style-type:none;" id="t34itemAddNew"><a href="#" onclick="addRow(34); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="37" rel="38">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-38">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #35</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist35">
+                <li id="t35item1"><input type="text" id="t35ent1"></li>
+                <li id="t35item2"><input type="text" id="t35ent2"></li>
+                <li id="t35item3"><input type="text" id="t35ent3"><br></li>
+                <li id="t35item4"><input type="text" id="t35ent4"><br></li>
+                <li id="t35item5"><input type="text" id="t35ent5"><br></li>
+                <li style="list-style-type:none;" id="t35itemAddNew"><a href="#" onclick="addRow(35); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="38" rel="39">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-39">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #36</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist36">
+                <li id="t36item1"><input type="text" id="t36ent1"></li>
+                <li id="t36item2"><input type="text" id="t36ent2"></li>
+                <li id="t36item3"><input type="text" id="t36ent3"><br></li>
+                <li id="t36item4"><input type="text" id="t36ent4"><br></li>
+                <li id="t36item5"><input type="text" id="t36ent5"><br></li>
+                <li style="list-style-type:none;" id="t36itemAddNew"><a href="#" onclick="addRow(36); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="39" rel="40">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-40">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #37</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist37">
+                <li id="t37item1"><input type="text" id="t37ent1"></li>
+                <li id="t37item2"><input type="text" id="t37ent2"></li>
+                <li id="t37item3"><input type="text" id="t37ent3"><br></li>
+                <li id="t37item4"><input type="text" id="t37ent4"><br></li>
+                <li id="t37item5"><input type="text" id="t37ent5"><br></li>
+                <li style="list-style-type:none;" id="t37itemAddNew"><a href="#" onclick="addRow(37); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="40" rel="41">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-41">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #38</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist38">
+                <li id="t38item1"><input type="text" id="t38ent1"></li>
+                <li id="t38item2"><input type="text" id="t38ent2"></li>
+                <li id="t38item3"><input type="text" id="t38ent3"><br></li>
+                <li id="t38item4"><input type="text" id="t38ent4"><br></li>
+                <li id="t38item5"><input type="text" id="t38ent5"><br></li>
+                <li style="list-style-type:none;" id="t38itemAddNew"><a href="#" onclick="addRow(38); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="41" rel="42">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-42">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #39</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist39">
+                <li id="t39item1"><input type="text" id="t39ent1"></li>
+                <li id="t39item2"><input type="text" id="t39ent2"></li>
+                <li id="t39item3"><input type="text" id="t39ent3"><br></li>
+                <li id="t39item4"><input type="text" id="t39ent4"><br></li>
+                <li id="t39item5"><input type="text" id="t39ent5"><br></li>
+                <li style="list-style-type:none;" id="t39itemAddNew"><a href="#" onclick="addRow(39); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="42" rel="43">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-43">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #40</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist40">
+                <li id="t40item1"><input type="text" id="t40ent1"></li>
+                <li id="t40item2"><input type="text" id="t40ent2"></li>
+                <li id="t40item3"><input type="text" id="t40ent3"><br></li>
+                <li id="t40item4"><input type="text" id="t40ent4"><br></li>
+                <li id="t40item5"><input type="text" id="t40ent5"><br></li>
+                <li style="list-style-type:none;" id="t40itemAddNew"><a href="#" onclick="addRow(40); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="43" rel="44">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-44">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #41</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist41">
+                <li id="t41item1"><input type="text" id="t41ent1"></li>
+                <li id="t41item2"><input type="text" id="t41ent2"></li>
+                <li id="t41item3"><input type="text" id="t41ent3"><br></li>
+                <li id="t41item4"><input type="text" id="t41ent4"><br></li>
+                <li id="t41item5"><input type="text" id="t41ent5"><br></li>
+                <li style="list-style-type:none;" id="t41itemAddNew"><a href="#" onclick="addRow(41); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="44" rel="45">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-45">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #42</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist42">
+                <li id="t42item1"><input type="text" id="t42ent1"></li>
+                <li id="t42item2"><input type="text" id="t42ent2"></li>
+                <li id="t42item3"><input type="text" id="t42ent3"><br></li>
+                <li id="t42item4"><input type="text" id="t42ent4"><br></li>
+                <li id="t42item5"><input type="text" id="t42ent5"><br></li>
+                <li style="list-style-type:none;" id="t42itemAddNew"><a href="#" onclick="addRow(42); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="45" rel="46">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-46">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #43</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist43">
+                <li id="t43item1"><input type="text" id="t43ent1"></li>
+                <li id="t43item2"><input type="text" id="t43ent2"></li>
+                <li id="t43item3"><input type="text" id="t43ent3"><br></li>
+                <li id="t43item4"><input type="text" id="t43ent4"><br></li>
+                <li id="t43item5"><input type="text" id="t43ent5"><br></li>
+                <li style="list-style-type:none;" id="t43itemAddNew"><a href="#" onclick="addRow(43); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="46" rel="47">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-47">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #44</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist44">
+                <li id="t44item1"><input type="text" id="t44ent1"></li>
+                <li id="t44item2"><input type="text" id="t44ent2"></li>
+                <li id="t44item3"><input type="text" id="t44ent3"><br></li>
+                <li id="t44item4"><input type="text" id="t44ent4"><br></li>
+                <li id="t44item5"><input type="text" id="t44ent5"><br></li>
+                <li style="list-style-type:none;" id="t44itemAddNew"><a href="#" onclick="addRow(44); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="47" rel="48">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-48">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #45</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist45">
+                <li id="t45item1"><input type="text" id="t45ent1"></li>
+                <li id="t45item2"><input type="text" id="t45ent2"></li>
+                <li id="t45item3"><input type="text" id="t45ent3"><br></li>
+                <li id="t45item4"><input type="text" id="t45ent4"><br></li>
+                <li id="t45item5"><input type="text" id="t45ent5"><br></li>
+                <li style="list-style-type:none;" id="t45itemAddNew"><a href="#" onclick="addRow(45); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="48" rel="49">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-49">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #46</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist46">
+                <li id="t46item1"><input type="text" id="t46ent1"></li>
+                <li id="t46item2"><input type="text" id="t46ent2"></li>
+                <li id="t46item3"><input type="text" id="t46ent3"><br></li>
+                <li id="t46item4"><input type="text" id="t46ent4"><br></li>
+                <li id="t46item5"><input type="text" id="t46ent5"><br></li>
+                <li style="list-style-type:none;" id="t46itemAddNew"><a href="#" onclick="addRow(46); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="49" rel="50">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-50">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #47</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist47">
+                <li id="t47item1"><input type="text" id="t47ent1"></li>
+                <li id="t47item2"><input type="text" id="t47ent2"></li>
+                <li id="t47item3"><input type="text" id="t47ent3"><br></li>
+                <li id="t47item4"><input type="text" id="t47ent4"><br></li>
+                <li id="t47item5"><input type="text" id="t47ent5"><br></li>
+                <li style="list-style-type:none;" id="t47itemAddNew"><a href="#" onclick="addRow(47); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="50" rel="51">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-51">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #48</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist48">
+                <li id="t48item1"><input type="text" id="t48ent1"></li>
+                <li id="t48item2"><input type="text" id="t48ent2"></li>
+                <li id="t48item3"><input type="text" id="t48ent3"><br></li>
+                <li id="t48item4"><input type="text" id="t48ent4"><br></li>
+                <li id="t48item5"><input type="text" id="t48ent5"><br></li>
+                <li style="list-style-type:none;" id="t48itemAddNew"><a href="#" onclick="addRow(48); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="51" rel="52">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-52">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #49</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist49">
+                <li id="t49item1"><input type="text" id="t49ent1"></li>
+                <li id="t49item2"><input type="text" id="t49ent2"></li>
+                <li id="t49item3"><input type="text" id="t49ent3"><br></li>
+                <li id="t49item4"><input type="text" id="t49ent4"><br></li>
+                <li id="t49item5"><input type="text" id="t49ent5"><br></li>
+                <li style="list-style-type:none;" id="t49itemAddNew"><a href="#" onclick="addRow(49); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="52" rel="53">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-53">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #50</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist50">
+                <li id="t50item1"><input type="text" id="t50ent1"></li>
+                <li id="t50item2"><input type="text" id="t50ent2"></li>
+                <li id="t50item3"><input type="text" id="t50ent3"><br></li>
+                <li id="t50item4"><input type="text" id="t50ent4"><br></li>
+                <li id="t50item5"><input type="text" id="t50ent5"><br></li>
+                <li style="list-style-type:none;" id="t50itemAddNew"><a href="#" onclick="addRow(50); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="53" rel="54">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-54">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #51</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist51">
+                <li id="t51item1"><input type="text" id="t51ent1"></li>
+                <li id="t51item2"><input type="text" id="t51ent2"></li>
+                <li id="t51item3"><input type="text" id="t51ent3"><br></li>
+                <li id="t51item4"><input type="text" id="t51ent4"><br></li>
+                <li id="t51item5"><input type="text" id="t51ent5"><br></li>
+                <li style="list-style-type:none;" id="t51itemAddNew"><a href="#" onclick="addRow(51); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="54" rel="55">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-55">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #52</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist52">
+                <li id="t52item1"><input type="text" id="t52ent1"></li>
+                <li id="t52item2"><input type="text" id="t52ent2"></li>
+                <li id="t52item3"><input type="text" id="t52ent3"><br></li>
+                <li id="t52item4"><input type="text" id="t52ent4"><br></li>
+                <li id="t52item5"><input type="text" id="t52ent5"><br></li>
+                <li style="list-style-type:none;" id="t52itemAddNew"><a href="#" onclick="addRow(52); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="55" rel="56">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-56">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #53</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist53">
+                <li id="t53item1"><input type="text" id="t53ent1"></li>
+                <li id="t53item2"><input type="text" id="t53ent2"></li>
+                <li id="t53item3"><input type="text" id="t53ent3"><br></li>
+                <li id="t53item4"><input type="text" id="t53ent4"><br></li>
+                <li id="t53item5"><input type="text" id="t53ent5"><br></li>
+                <li style="list-style-type:none;" id="t53itemAddNew"><a href="#" onclick="addRow(53); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="56" rel="57">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-57">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #54</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist54">
+                <li id="t54item1"><input type="text" id="t54ent1"></li>
+                <li id="t54item2"><input type="text" id="t54ent2"></li>
+                <li id="t54item3"><input type="text" id="t54ent3"><br></li>
+                <li id="t54item4"><input type="text" id="t54ent4"><br></li>
+                <li id="t54item5"><input type="text" id="t54ent5"><br></li>
+                <li style="list-style-type:none;" id="t54itemAddNew"><a href="#" onclick="addRow(54); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="57" rel="58">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-58">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #55</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist55">
+                <li id="t55item1"><input type="text" id="t55ent1"></li>
+                <li id="t55item2"><input type="text" id="t55ent2"></li>
+                <li id="t55item3"><input type="text" id="t55ent3"><br></li>
+                <li id="t55item4"><input type="text" id="t55ent4"><br></li>
+                <li id="t55item5"><input type="text" id="t55ent5"><br></li>
+                <li style="list-style-type:none;" id="t55itemAddNew"><a href="#" onclick="addRow(55); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="58" rel="59">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-59">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #56</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist56">
+                <li id="t56item1"><input type="text" id="t56ent1"></li>
+                <li id="t56item2"><input type="text" id="t56ent2"></li>
+                <li id="t56item3"><input type="text" id="t56ent3"><br></li>
+                <li id="t56item4"><input type="text" id="t56ent4"><br></li>
+                <li id="t56item5"><input type="text" id="t56ent5"><br></li>
+                <li style="list-style-type:none;" id="t56itemAddNew"><a href="#" onclick="addRow(56); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="59" rel="60">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-60">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #57</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist57">
+                <li id="t57item1"><input type="text" id="t57ent1"></li>
+                <li id="t57item2"><input type="text" id="t57ent2"></li>
+                <li id="t57item3"><input type="text" id="t57ent3"><br></li>
+                <li id="t57item4"><input type="text" id="t57ent4"><br></li>
+                <li id="t57item5"><input type="text" id="t57ent5"><br></li>
+                <li style="list-style-type:none;" id="t57itemAddNew"><a href="#" onclick="addRow(57); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="60" rel="61">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-61">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #58</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist58">
+                <li id="t58item1"><input type="text" id="t58ent1"></li>
+                <li id="t58item2"><input type="text" id="t58ent2"></li>
+                <li id="t58item3"><input type="text" id="t58ent3"><br></li>
+                <li id="t58item4"><input type="text" id="t58ent4"><br></li>
+                <li id="t58item5"><input type="text" id="t58ent5"><br></li>
+                <li style="list-style-type:none;" id="t58itemAddNew"><a href="#" onclick="addRow(58); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="61" rel="62">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-62">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #59</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist59">
+                <li id="t59item1"><input type="text" id="t59ent1"></li>
+                <li id="t59item2"><input type="text" id="t59ent2"></li>
+                <li id="t59item3"><input type="text" id="t59ent3"><br></li>
+                <li id="t59item4"><input type="text" id="t59ent4"><br></li>
+                <li id="t59item5"><input type="text" id="t59ent5"><br></li>
+                <li style="list-style-type:none;" id="t59itemAddNew"><a href="#" onclick="addRow(59); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="62" rel="63">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-63">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #60</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist60">
+                <li id="t60item1"><input type="text" id="t60ent1"></li>
+                <li id="t60item2"><input type="text" id="t60ent2"></li>
+                <li id="t60item3"><input type="text" id="t60ent3"><br></li>
+                <li id="t60item4"><input type="text" id="t60ent4"><br></li>
+                <li id="t60item5"><input type="text" id="t60ent5"><br></li>
+                <li style="list-style-type:none;" id="t60itemAddNew"><a href="#" onclick="addRow(60); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="63" rel="64">Next Page &raquo;</a>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-64">
+    <div class="col-xs-12 col-md-12 col-centered">
+    <h2>Task #61</h2>
+    <form>
+        <div class="form-group">
+            <ol id="entlist61">
+                <li id="t61item1"><input type="text" id="t61ent1"></li>
+                <li id="t61item2"><input type="text" id="t61ent2"></li>
+                <li id="t61item3"><input type="text" id="t61ent3"><br></li>
+                <li id="t61item4"><input type="text" id="t61ent4"><br></li>
+                <li id="t61item5"><input type="text" id="t61ent5"><br></li>
+                <li style="list-style-type:none;" id="t61itemAddNew"><a href="#" onclick="addRow(61); return false;">Add Additional Row...</a></li>
+            </ol>
+        </div>
+    </form>
+    </div>
+    <div>&nbsp;</div>
+    <a class="next-tab mover submit-page" href="#instructions-top" id="64" rel="65">Next Page &raquo;</a>
+</div>
+        <!-- Page 65 (Finished) -->
+
+        <div class="ui-tabs-panel ui-tabs-hide" id="tabs-65">
+        <h3>Thank you for completing the HIT! Your additional earnings of ${offer_amt} will be paid via the &quot;bonus&quot; feature. Click the &quot;Submit&quot; button below to finish.</h3>
+
+        <div>&nbsp;</div>
+        </div>
+        <!-- End Page 65 (Finished) -->
+</div><!-- End tabs -->
+</div><!-- End page-wrap -->
+<style type="text/css">
+#show-hide-instructions {
+    color: white;
+    text-decoration: underline;
+}
+#show-hide-instructions:hover {
+    cursor: pointer;
+}
+a.mover {
+    background: #900;
+    padding: 6px 12px;
+    position: absolute;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+}
+.next-tab {
+    bottom: 0;
+    right: 0;
+    -moz-border-radius-topleft: 10px;
+    -webkit-border-top-left-radius: 10px;
+}
+.prev-tab {
+    bottom: 0;
+    left: 0;
+    -moz-border-radius-topright: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+.imagecontainer {
+    display:block;
+    margin-left: auto;
+    margin-right: auto;
+    border:1px solid #fbfbfb;
+    width:1000px;
+}
+.inputfields {
+    display:block;
+    float:left;
+}
+.hidden {
+    display:none;
+}
+.async-load {
+    background: url(https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif) 50% no-repeat;
+}
+</style>

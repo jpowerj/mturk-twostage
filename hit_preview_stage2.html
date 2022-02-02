@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>HIT Preview</title>
+
+<!-- For help on using this template, see the blog post: https://blog.mturk.com/editing-the-survey-link-project-template-in-the-ui-7c75285105fb#.py7towsdx -->
+<!-- HIT template: SurveyLink-v3.0 -->
+<!-- The following snippet enables the 'responsive' behavior on smaller screens -->
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+</head>
+<body>
+<section class="container" id="SurveyContainer">
+  <div class="row">
+    <div class="col-xs-12 col-md-12">
+      <div class="panel-body" id="instructionBody">
+        <p>We are conducting an academic survey about the conditions of the modern workplace.</p>
+
+        <p>This survey proceeds in <strong>two stages</strong>:
+        <ol>
+          <li>First, please <strong>accept this HIT</strong> and then answer three quick questions about yourself below. As long as your responses are valid, your submission of this HIT will be auto-approved and you will receive the $0.15 reward for completion of this HIT.</li>
+          <li>Immediately upon submission, you will also receive an email containing a link to a <strong>second, custom HIT</strong> created for you, with a custom HIT reward amount. If you are willing to fill out an additional survey for this reward amount, with approximately 30 questions and 3 300-word essays, please accept and follow the instructions given in the second-stage HIT in your email.</li>
+        </ol>
+        </p>
+
+        <p>This first-stage HIT may not be submitted more than once, and the second-stage HIT sent to your email will only be generated once per worker ID. Additional HIT submissions from the same worker will be rejected.</p>
+      </div>
+    </div>
+  </div>
+  <!-- Survey Link Layout -->
+  <div class="row" id="workContent">
+    <div class="col-xs-12 col-md-8 col-md-offset-2">
+      <!-- Content for Worker -->
+      <table class="table table-bordered">
+        <colgroup>
+          <col class="col-xs-5 col-md-5" />
+          <col class="col-xs-7 col-md-7" />
+        </colgroup>
+        <tbody>
+          <tr id="ageTr">
+            <td><label for="age">Please enter your age, in years:</label></td>
+            <td><input class="form-control" id="age" name="age" required="" type="text" /></td>
+          </tr>
+          <tr id="onlineTr">
+            <td><label for="onlinehrs">Hours per week spent online doing tasks for money:</label></td>
+            <td><input class="form-control" id="onlinehrs" name="onlinehrs" type="text" /></td>
+          </tr>
+          <tr id="reasonTr">
+            <td><label for="reason">Primary reason for participation:</label></td>
+            <td>
+                <select class="form-control" id="reason" name="reason">
+                    <option disabled="disabled" hidden="" selected="selected" value="">-- Please select an option --</option>
+                    <option value="money">Make money</option>
+                    <option value="skills">Learn new skills</option>
+                    <option value="fun">Have fun</option>
+                </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    <!-- End Content for Worker -->
+    </div>
+  </div>
+<!-- End Survey Link Layout -->
+</section>
+<!-- Please note that Bootstrap CSS/JS and JQuery are 3rd party libraries that may update their url/code at any time. Amazon Mechanical Turk (MTurk) is including these libraries as a default option for you, but is not responsible for any changes to the external libraries -->
+<!-- External CSS references -->
+<link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" integrity="sha384-IS73LIqjtYesmURkDE9MXKbXqYA8rvKEp/ghicjem7Vc3mGRdQRptJSz60tvrB6+" rel="stylesheet" />
+<!-- Open internal style sheet -->
+<style type="text/css">
+#collapseTrigger {
+  color:#fff;
+  display: block;
+  text-decoration: none;
+}
+.image{
+  margin-bottom: 15px; 
+}
+/* CSS for breaking long words/urls */
+.dont-break-out {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  -ms-word-break: break-all;
+  word-break: break-all;
+  word-break: break-word;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+</style>
+<!-- Close internal style sheet -->
+<!-- External JS references -->
+<script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!--<script src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script>-->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    var num_tabs = !num_pages!;
+    var num_tasks = !num_tasks!;
+    var irb_page = 1;
+    var demographic_page = 2;
+    var first_task_page = 3;
+    var offer_page = 4;
+    var last_task_page = num_tabs;
+    var finished_page = last_task_page + 1;
+    var $tabs = $( "#tabs" ).tabs();
+    // unselect all of the radio buttons
+    $("#submitButton").hide();
+    $("#submitButton").click(function() {
+        // First register the user as having completed the HIT
+        var cur_timestamp = Date.now().toString();
+        var cur_mtid = turkGetParam("workerId");
+        // Register the user
+        var ajaxUrl = "https://jjacobs.info/register_restdb.php";
+        console.log("register_restdb: mtid " + cur_mtid + ", timestamp " + cur_timestamp);
+        $.ajax({
+            url: ajaxUrl,
+            data: {mtid: cur_mtid, timestamp: cur_timestamp},
+            success: function (result) {
+                console.log( "Post Result: " + result );
+                //$("#mturk_form").submit();
+                //return true;
+            },
+            async: false
+        });
+        // Now send the data to MTurk
+        // https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMechanicalTurkRequester/mturk-hits-defining-questions-html-javascript.html
+        const urlParams = new URLSearchParams(window.location.search);
+        // create the form element and point it to the correct endpoint
+        const form = document.createElement('form');
+        form.action = (new URL('mturk/externalSubmit', urlParams.get('turkSubmitTo'))).href;
+        form.method = 'post';
+        // attach the assignmentId
+        const inputAssignmentId = document.createElement('input');
+        inputAssignmentId.name = 'assignmentId';
+        inputAssignmentId.value = urlParams.get('assignmentId');
+        inputAssignmentId.hidden = true;
+        form.appendChild(inputAssignmentId);
+        // attach data I want to send back
+        $("[id^=pdbtask]").each(function() {
+            const inputCoordinates = document.createElement('input');
+            inputCoordinates.name = $(this).attr('id');
+            inputCoordinates.value = $(this).val();
+            inputCoordinates.hidden = true;
+            form.appendChild(inputCoordinates);
+        });
+        console.log("Constructed form:");
+        console.log(form);
+        // attach the form to the HTML document and trigger submission
+        document.body.appendChild(form);
+        form.submit();
+        //$.get(ajaxUrl, {mtid: cur_mtid, timestamp: cur_timestamp}).done(function(data) {
+        //    console.log( "Post Result: " + data );
+        //    //$("#mturk_form").submit();
+        //    return true;
+        //});
+        return false;
+    });
+    $("input").prop("checked",false);
+
+    function turkGetParam( name, defaultValue ) {
+        var regexS = "[\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp( regexS );
+        var tmpURL = window.location.href;
+        var results = regex.exec( tmpURL );
+        if( results == null ) {
+            return defaultValue;
+        } else {
+            return results[1];
+        }
+    }
+
+    $("#show-hide-instructions").click(function () {
+        if ($(".panel-body").is(":visible")) {
+            $(".panel-body").hide();
+            $(this).html("Show");
+        } else {
+            $(".panel-body").show();
+            $(this).html("Hide");
+        }
+        return false;
+    });
+
+    function hideInstructions() {
+        if ($(".panel-body").is(":visible")) {
+            $(".panel-body").hide();
+            $("#show-hide-instructions").html("Show");
+        }
+    }
+
+    $("#clickHideInstructions").click(function() {
+        hideInstructions();
+    })
+
+    function showInstructions() {
+        if (!$(".panel-body").is(":visible")) {
+            $(".panel-body").show();
+            $("#show-hide-instructions").html("Hide");
+        }
+    }
+
+    // Instructions panel starts out hidden
+    hideInstructions();
+
+    // Handler for the "Next Page" button
+    $(".submit-page").click(function() {
+        // Next, check if the next page is an offer, an additional page, or finished
+        var this_id = $(this).attr("id");
+        var this_tabnum = this_id.split("-").slice(-1);
+        console.log("Submitting tab #" + this_tabnum);
+        var next_tab = $(this).attr("rel");
+        console.log("Moving to tab #" + next_tab);
+        var final_tab = $(this).attr("title");
+        if (this_tabnum == irb_page) {
+            // *CASE 1*: Submitting IRB form, moving to Demographic Survey
+            // Check HIT accepted
+            var curAssignmentId = turkGetParam('assignmentId', '');
+            console.log("curAssignmentId: " + curAssignmentId);
+            if (curAssignmentId == '' || curAssignmentId == 'ASSIGNMENT_ID_NOT_AVAILABLE') {
+                //console.log("isPreview: " + isPreview);
+                //if (curAssignmentId != "previewassignment") {
+                if (!isPreview) {
+                    alert("Please accept the HIT before continuing");
+                    return false;
+                }
+            }
+            //  IRB form submitted... But check that the consent is checked
+            if (!$("#consent").is(":checked")) {
+                alert("You must agree to the consent statement in order to perform this HIT");
+                return false;
+            }
+            // Check that the user hasn't already done a HIT for us
+            var cur_mtid = turkGetParam("workerId");
+            var queryUrl = "https://jjacobs.info/user_in_db.php"; // ?mtid=" + cur_mtid;
+            //var queryUrl = "https://mturk-1275.restdb.io/rest/mtusers";
+            //?q={"mtid":"No_MTID_Received"}
+            //$.ajax({
+            //    url: queryUrl,
+            //    headers: { 'x-my-custom-header': 'some value' }
+            //});
+            console.log("Checking mtid " + cur_mtid);
+            var queryResult = $.get(queryUrl, {'mtid':cur_mtid}).done(function(data) {
+                console.log( "Query Result: " + data );
+                if (data == "True") {
+                    alert("Our database indicates that you have already completed a HIT from this batch. Workers are only allowed to submit one HIT in this round. If you think this is in error, please contact us at cutextlab@gmail.com.");
+                    return false;
+                } else {
+                    $tabs.tabs('option','active', next_tab - 1);
+                    return true;
+                }
+            });
+        } else if (this_tabnum == demographic_page) {
+            // *CASE 2*: Submitting Demographic Survey, moving to First Task
+            if (!$.isNumeric($("#pdbtaskhours").val())) {
+                alert("Please enter a numeric value for the 'Hours per week spent online' field");
+                return false;
+            } else if (!$.isNumeric($("#pdbtaskage").val())){
+                alert("Please enter a numeric value for the 'Age' field");
+                return false;
+            } else {
+                // Now show the full Instructions panel, so they can read it before
+                // starting first task
+                showInstructions();
+                $tabs.tabs('option','active', next_tab - 1);
+                return true;
+            }
+        } else if (this_tabnum == first_task_page) {
+            // *CASE 3*: Submitting First Task, moving to Offer
+            // 'option','active' IS ZERO INDEXED
+            // Hiding the instructions from here on out
+            hideInstructions();
+            // Showing the submit button, which they click if they *don't* want
+            // to accept the offer
+            $("#submitButton").show();
+            $tabs.tabs('option', 'active', next_tab - 1);
+            return true;
+        } else if (this_tabnum == offer_page) {
+            // *CASE 4*: Submitting Offer, moving to Stage Two start
+            // Re-hide the submit button
+            $("#submitButton").hide();
+            $tabs.tabs('option','active', next_tab - 1);
+            return true;
+        } else if (this_tabnum == last_task_page) {
+            // *CASE 5*: Submitting Stage Two end, moving to Finished
+            // Final image submitted, go to finished page and show the submit button
+            $("#submitButton").show();
+            $tabs.tabs('option', 'active', next_tab - 1);
+            return true;
+        } else {
+            // *CASE 6*: Just moving from one task to next
+            // Just show next image
+            $tabs.tabs('option', 'active', next_tab - 1);
+            return true;
+        }
+    });
+
+    var pdf_urls = [];
+    pdf_urls[0] = "${pdf1}";
+    pdf_urls[1] = "${pdf2}";
+    pdf_urls[2] = "${pdf3}";
+    pdf_urls[3] = "${pdf4}";
+    pdf_urls[4] = "${pdf5}";
+    pdf_urls[5] = "${pdf6}";
+    pdf_urls[6] = "${pdf7}";
+    pdf_urls[7] = "${pdf8}";
+    pdf_urls[8] = "${pdf9}";
+    pdf_urls[9] = "${pdf10}";
+    pdf_urls[10] = "${pdf11}";
+    pdf_urls[11] = "${pdf12}";
+    pdf_urls[12] = "${pdf13}";
+});
+
+</script>

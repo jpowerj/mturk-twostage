@@ -1,0 +1,706 @@
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!--<script src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script>-->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+$(document).ready(function() {
+    var num_tabs = 16;
+    var num_tasks = 13;
+    var irb_page = 1;
+    var demographic_page = 2;
+    var first_task_page = 3;
+    var offer_page = 4;
+    var last_task_page = num_tabs;
+    var finished_page = last_task_page + 1;
+    var $tabs = $( "#tabs" ).tabs();
+    // unselect all of the radio buttons
+    $("#submitButton").hide();
+    $("#submitButton").click(function() {
+        // First register the user as having completed the HIT
+        var cur_timestamp = Date.now().toString();
+        var cur_mtid = turkGetParam("workerId");
+        // Register the user
+        var ajaxUrl = "https://jjacobs.info/register_restdb.php";
+        console.log("register_restdb: mtid " + cur_mtid + ", timestamp " + cur_timestamp);
+        $.ajax({
+            url: ajaxUrl,
+            data: {mtid: cur_mtid, timestamp: cur_timestamp},
+            success: function (result) {
+                console.log( "Post Result: " + result );
+                //$("#mturk_form").submit();
+                //return true;
+            },
+            async: false
+        });
+        // Now send the data to MTurk
+        // https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMechanicalTurkRequester/mturk-hits-defining-questions-html-javascript.html
+        const urlParams = new URLSearchParams(window.location.search);
+        // create the form element and point it to the correct endpoint
+        const form = document.createElement('form');
+        form.action = (new URL('mturk/externalSubmit', urlParams.get('turkSubmitTo'))).href;
+        form.method = 'post';
+        // attach the assignmentId
+        const inputAssignmentId = document.createElement('input');
+        inputAssignmentId.name = 'assignmentId';
+        inputAssignmentId.value = urlParams.get('assignmentId');
+        inputAssignmentId.hidden = true;
+        form.appendChild(inputAssignmentId);
+        // attach data I want to send back
+        $("[id^=pdbtask]").each(function() {
+            const inputCoordinates = document.createElement('input');
+            inputCoordinates.name = $(this).attr('id');
+            inputCoordinates.value = $(this).val();
+            inputCoordinates.hidden = true;
+            form.appendChild(inputCoordinates);
+        });
+        console.log("Constructed form:");
+        console.log(form);
+        // attach the form to the HTML document and trigger submission
+        document.body.appendChild(form);
+        form.submit();
+        //$.get(ajaxUrl, {mtid: cur_mtid, timestamp: cur_timestamp}).done(function(data) {
+        //    console.log( "Post Result: " + data );
+        //    //$("#mturk_form").submit();
+        //    return true;
+        //});
+        return false;
+    });
+    $("input").prop("checked",false);
+
+    function turkGetParam( name, defaultValue ) {
+        var regexS = "[\?&]"+name+"=([^&#]*)";
+        var regex = new RegExp( regexS );
+        var tmpURL = window.location.href;
+        var results = regex.exec( tmpURL );
+        if( results == null ) {
+            return defaultValue;
+        } else {
+            return results[1];
+        }
+    }
+
+    $("#show-hide-instructions").click(function () {
+        if ($(".panel-body").is(":visible")) {
+            $(".panel-body").hide();
+            $(this).html("Show");
+        } else {
+            $(".panel-body").show();
+            $(this).html("Hide");
+        }
+        return false;
+    });
+
+    function hideInstructions() {
+        if ($(".panel-body").is(":visible")) {
+            $(".panel-body").hide();
+            $("#show-hide-instructions").html("Show");
+        }
+    }
+
+    $("#clickHideInstructions").click(function() {
+        hideInstructions();
+    })
+
+    function showInstructions() {
+        if (!$(".panel-body").is(":visible")) {
+            $(".panel-body").show();
+            $("#show-hide-instructions").html("Hide");
+        }
+    }
+
+    // Instructions panel starts out hidden
+    hideInstructions();
+
+    // Handler for the "Next Page" button
+    $(".submit-page").click(function() {
+        // Next, check if the next page is an offer, an additional page, or finished
+        var this_id = $(this).attr("id");
+        var this_tabnum = this_id.split("-").slice(-1);
+        console.log("Submitting tab #" + this_tabnum);
+        var next_tab = $(this).attr("rel");
+        console.log("Moving to tab #" + next_tab);
+        var final_tab = $(this).attr("title");
+        if (this_tabnum == irb_page) {
+            // *CASE 1*: Submitting IRB form, moving to Demographic Survey
+            // Check HIT accepted
+            var curAssignmentId = turkGetParam('assignmentId', '');
+            console.log("curAssignmentId: " + curAssignmentId);
+            if (curAssignmentId == '' || curAssignmentId == 'ASSIGNMENT_ID_NOT_AVAILABLE') {
+                //console.log("isPreview: " + isPreview);
+                //if (curAssignmentId != "previewassignment") {
+                if (!isPreview) {
+                    alert("Please accept the HIT before continuing");
+                    return false;
+                }
+            }
+            //  IRB form submitted... But check that the consent is checked
+            if (!$("#consent").is(":checked")) {
+                alert("You must agree to the consent statement in order to perform this HIT");
+                return false;
+            }
+            // Check that the user hasn't already done a HIT for us
+            var cur_mtid = turkGetParam("workerId");
+            var queryUrl = "https://jjacobs.info/user_in_db.php"; // ?mtid=" + cur_mtid;
+            //var queryUrl = "https://mturk-1275.restdb.io/rest/mtusers";
+            //?q={"mtid":"No_MTID_Received"}
+            //$.ajax({
+            //    url: queryUrl,
+            //    headers: { 'x-my-custom-header': 'some value' }
+            //});
+            console.log("Checking mtid " + cur_mtid);
+            var queryResult = $.get(queryUrl, {'mtid':cur_mtid}).done(function(data) {
+                console.log( "Query Result: " + data );
+                if (data == "True") {
+                    alert("Our database indicates that you have already completed a HIT from this batch. Workers are only allowed to submit one HIT in this round. If you think this is in error, please contact us at cutextlab@gmail.com.");
+                    return false;
+                } else {
+                    $tabs.tabs('option','active', next_tab - 1);
+                    return true;
+                }
+            });
+        } else if (this_tabnum == demographic_page) {
+            // *CASE 2*: Submitting Demographic Survey, moving to First Task
+            if (!$.isNumeric($("#pdbtaskhours").val())) {
+                alert("Please enter a numeric value for the 'Hours per week spent online' field");
+                return false;
+            } else if (!$.isNumeric($("#pdbtaskage").val())){
+                alert("Please enter a numeric value for the 'Age' field");
+                return false;
+            } else {
+                // Now show the full Instructions panel, so they can read it before
+                // starting first task
+                showInstructions();
+                $tabs.tabs('option','active', next_tab - 1);
+                return true;
+            }
+        } else if (this_tabnum == first_task_page) {
+            // *CASE 3*: Submitting First Task, moving to Offer
+            // 'option','active' IS ZERO INDEXED
+            // Hiding the instructions from here on out
+            hideInstructions();
+            // Showing the submit button, which they click if they *don't* want
+            // to accept the offer
+            $("#submitButton").show();
+            $tabs.tabs('option', 'active', next_tab - 1);
+            return true;
+        } else if (this_tabnum == offer_page) {
+            // *CASE 4*: Submitting Offer, moving to Stage Two start
+            // Re-hide the submit button
+            $("#submitButton").hide();
+            $tabs.tabs('option','active', next_tab - 1);
+            return true;
+        } else if (this_tabnum == last_task_page) {
+            // *CASE 5*: Submitting Stage Two end, moving to Finished
+            // Final image submitted, go to finished page and show the submit button
+            $("#submitButton").show();
+            $tabs.tabs('option', 'active', next_tab - 1);
+            return true;
+        } else {
+            // *CASE 6*: Just moving from one task to next
+            // Just show next image
+            $tabs.tabs('option', 'active', next_tab - 1);
+            return true;
+        }
+    });
+
+    var pdf_urls = [];
+    pdf_urls[0] = "${pdf1}";
+    pdf_urls[1] = "${pdf2}";
+    pdf_urls[2] = "${pdf3}";
+    pdf_urls[3] = "${pdf4}";
+    pdf_urls[4] = "${pdf5}";
+    pdf_urls[5] = "${pdf6}";
+    pdf_urls[6] = "${pdf7}";
+    pdf_urls[7] = "${pdf8}";
+    pdf_urls[8] = "${pdf9}";
+    pdf_urls[9] = "${pdf10}";
+    pdf_urls[10] = "${pdf11}";
+    pdf_urls[11] = "${pdf12}";
+    pdf_urls[12] = "${pdf13}";
+});
+
+</script><section class="container" id="TaskInstructions">
+    <!-- Instructions -->
+    <a name="instructions-top"></a>
+    <div class="row col-xs-12 col-md-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <strong>Instructions</strong>
+                <span> [<a href="#" id="show-hide-instructions">Show</a>] </span>
+            </div>
+
+            <div class="panel-body" id="instructionBody" style="display: none;">
+                <p>Use the 5 text input boxes at the top of the page to enter the <strong>first 5 entities</strong> referred to in the <strong>section headers</strong> of the PDF document below. For this task, an <strong>entity</strong> is any one of the following:
+                <ul>
+                    <li>A <strong>country/geographic region</strong> (for example: Iran, East Asia, London),</li>
+                    <li>A <strong>person</strong> (for example: Fidel Castro, Nelson Mandela, Khrushchev), or</li>
+                    <li>An <strong>organization</strong> (for example: the United Nations, NATO, "Palestinian Guerrillas").</li>
+                </ul>
+                If there are more than 5 entities referred to in the PDF, please enter only the first 5. If there are fewer than 5 entities referred to in the PDF, please enter "NA" in the remaining boxes.</p>
+                <hr>
+                <p class="pdbexample">Each document contains a numbered list of "global issues", each one pertaining to a particular entity or set of entities. For example, in the following image</p>
+                    <img src="https://cs.stanford.edu/~jjacobs3/pdb/example.png" width="800px" class="mx-auto d-block center-block">
+                <p class="pdbexample">
+                    <strong>Item 1</strong> refers to 2 entities: Qasim and Kuwait. It is not important that you know who or what Qasim or Kuwait is, or even know whether these are people or regions, as long as you recognize that 'Qasim' and 'Kuwait' are important subjects/entities within the section header. <strong>Item 2</strong> again refers to 2 entities, De Gaulle and Algeria, and <strong>Item 3</strong> refers to a single entity, Vientiane (again, as long as you recognize that 'Vientiane' is an important entity, it does not matter whether you know that it is specifically a geographic region).
+                </p>
+                <p class="pdbexample">So, for this document, the list would look like:
+                    <ol class="pdbexample">
+                        <li>Qasim</li>
+                        <li>Kuwait</li>
+                        <li>De Gaulle</li>
+                        <li>Algeria</li>
+                        <li>Vientiane</li>
+                    </ol>
+                </p>
+                <p class="pdbexample">
+                    Notice that we have <strong>ignored</strong> the full-length text on the right side of the page -- we only care about the <strong>headers</strong>, the numbered items (on the left-hand side in this example) that give an overview of the section. Often these will simply be the name of an entity, like "Congo", or a short description, like "Situation in East Asia".
+                </p>
+                <p class="pdbexample">
+                    Once you have entered the first 5 entities (even if the document contains more than 5 items), click the "Next Page" button in the bottom-right corner of the interface to continue on to the next page of the HIT. (<a href="#" id="clickHideInstructions">Click here to hide these instructions after reading</a>)
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- End Instructions -->
+</section>
+<div id="page-wrap">
+    <a name="tabs"></a>
+
+    <div id="tabs">
+        <div id="hiddenbatchid" style="display: none;">${batch_id}</div>
+
+        <div id="hiddennumtasks" style="display: none;">${additional_tasks}</div>
+
+        <div id="hiddenwage" style="display: none;">${offer_amt}</div>
+
+        <div id="hiddendiv" style="display: none;">
+            <ul>
+                <li><a href="#tabs-1">Consent Form</a></li>
+<li><a href="#tabs-2">Demographic Survey</a></li>
+<li><a href="#tabs-3">Page 3 (Task 1)</a></li>
+<li><a href="#tabs-4">Additional Tasks Offer</a></li>
+<li><a href="#tabs-5">Page 5 (Task 2)</a></li>
+<li><a href="#tabs-6">Page 6 (Task 3)</a></li>
+<li><a href="#tabs-7">Page 7 (Task 4)</a></li>
+<li><a href="#tabs-8">Page 8 (Task 5)</a></li>
+<li><a href="#tabs-9">Page 9 (Task 6)</a></li>
+<li><a href="#tabs-10">Page 10 (Task 7)</a></li>
+<li><a href="#tabs-11">Page 11 (Task 8)</a></li>
+<li><a href="#tabs-12">Page 12 (Task 9)</a></li>
+<li><a href="#tabs-13">Page 13 (Task 10)</a></li>
+<li><a href="#tabs-14">Page 14 (Task 11)</a></li>
+<li><a href="#tabs-15">Page 15 (Task 12)</a></li>
+<li><a href="#tabs-16">Page 16 (Task 13)</a></li>
+<li><a href="#tabs-17">Finished</a></li>
+
+            </ul>
+        </div>
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-1">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2 class="row">Task Description and Consent Form</h2>
+        <div class="row">
+            For this task, you will be asked to fill out some simple demographic info on the first page. Then, you will be asked to perform a data entry task (identifying people, organizations, and geographic entities mentioned in a PDF documents). You can click the "Show" button at the top of the Instructions panel above to see the full details of what the data entry task requires.
+        </div>
+        <div class="row">
+            <strong>You may not submit&nbsp;more than one HIT.</strong> Additional HIT requests will be rejected. If you have any questions/concerns please email us at <a href="mailto:columbiatextlab@gmail.com">columbiatextlab@gmail.com</a>.
+        </div>
+        <div class="row">
+            If at any time you have questions or concerns about your rights or welfare as a research subject, contact the Columbia University Morningside Human Research Protection Office (HRPO) at 212-851-7040 or 212-851-7044 (fax) or email <a href="mailto:askirb@columbia.edu">askirb@columbia.edu</a>.
+        </div>
+        <div class="row">
+            <label><input id="consent" name="consent" type="checkbox" value="yes" />&nbsp;I consent to participate in this study</label>
+        </div>
+        <div class="row">
+            (Remember to <strong>accept the HIT</strong> first, and then <strong>check the above consent box</strong>, before continuing!)
+        </div>
+        <div class="row">&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-1" rel="2">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-2">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Demographic Survey</h2>
+        Please enter some basic demographic information about yourself:
+        <form>
+            <div class="form-group">
+                <label for="pdbtaskage">Age</label>
+                <input id="pdbtaskage" name="age" type="text" class="form-control">
+                <label for="pdbtaskgender">Gender</label>
+                <select id="pdbtaskgender" name="gender" class="form-control">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="optout">Prefer not to say</option>
+                </select>
+                <label for="pdbtaskhours">Hours per week spent online doing tasks for money</label>
+                <input id="pdbtaskhours" name="hours" type="text" class="form-control">
+                <label for="pdbtaskcountry">Home Country</label>
+                <select id="pdbtaskcountry" name="country" class="form-control">
+                    <option value="us">United States</option>
+                    <option value="in">India</option>
+                    <option value="other">Other</option>
+                </select>
+                <label for="pdbtaskreason">Primary reason for participation:</label>
+                <select id="pdbtaskreason" name="reason" class="form-control">
+                    <option value="money">Make money</option>
+                    <option value="skills">Learn new skills</option>
+                    <option value="fun">Have fun</option>
+                </select>
+            </div>
+        </form>
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-2" rel="3">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-3">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #1</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask1input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask1ent1" id="pdbtask1input1">
+                <label for="pdbtask1input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask1ent2" id="pdbtask1input2">
+                <label for="pdbtask1input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask1ent3" id="pdbtask1input3">
+                <label for="pdbtask1input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask1ent4" id="pdbtask1input4">
+                <label for="pdbtask1input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask1ent5" id="pdbtask1input5">
+            </div>
+        </form>
+        <embed src="${pdf1}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-3" rel="4">Next Page &raquo;</a>
+    </div>
+</div><!-- Page 4 (Offer) -->
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-4">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h3>If you&#39;d like to continue and perform ${additional_tasks} additional data entry tasks for ${offer_amt}, please click &quot;Next Page&quot; below.</h3>
+        <h3>Otherwise, click the &quot;Submit&quot; button below.</h3>
+        <div>&nbsp;</div>
+        <input type="hidden" name="accepted-4" id="accepted-4"/>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-4" rel="5">Next Page &raquo;</a>
+        <input type="submit" id="submitButton" class="btn btn-primary center-block" value="Submit" style="">
+    </div>
+</div>
+<!-- End Page 4 (Offer) --><div class="ui-tabs-panel ui-tabs-hide" id="tabs-5">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #2</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask2input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask2ent1" id="pdbtask2input1">
+                <label for="pdbtask2input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask2ent2" id="pdbtask2input2">
+                <label for="pdbtask2input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask2ent3" id="pdbtask2input3">
+                <label for="pdbtask2input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask2ent4" id="pdbtask2input4">
+                <label for="pdbtask2input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask2ent5" id="pdbtask2input5">
+            </div>
+        </form>
+        <embed src="${pdf2}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-5" rel="6">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-6">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #3</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask3input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask3ent1" id="pdbtask3input1">
+                <label for="pdbtask3input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask3ent2" id="pdbtask3input2">
+                <label for="pdbtask3input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask3ent3" id="pdbtask3input3">
+                <label for="pdbtask3input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask3ent4" id="pdbtask3input4">
+                <label for="pdbtask3input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask3ent5" id="pdbtask3input5">
+            </div>
+        </form>
+        <embed src="${pdf3}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-6" rel="7">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-7">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #4</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask4input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask4ent1" id="pdbtask4input1">
+                <label for="pdbtask4input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask4ent2" id="pdbtask4input2">
+                <label for="pdbtask4input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask4ent3" id="pdbtask4input3">
+                <label for="pdbtask4input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask4ent4" id="pdbtask4input4">
+                <label for="pdbtask4input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask4ent5" id="pdbtask4input5">
+            </div>
+        </form>
+        <embed src="${pdf4}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-7" rel="8">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-8">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #5</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask5input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask5ent1" id="pdbtask5input1">
+                <label for="pdbtask5input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask5ent2" id="pdbtask5input2">
+                <label for="pdbtask5input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask5ent3" id="pdbtask5input3">
+                <label for="pdbtask5input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask5ent4" id="pdbtask5input4">
+                <label for="pdbtask5input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask5ent5" id="pdbtask5input5">
+            </div>
+        </form>
+        <embed src="${pdf5}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-8" rel="9">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-9">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #6</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask6input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask6ent1" id="pdbtask6input1">
+                <label for="pdbtask6input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask6ent2" id="pdbtask6input2">
+                <label for="pdbtask6input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask6ent3" id="pdbtask6input3">
+                <label for="pdbtask6input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask6ent4" id="pdbtask6input4">
+                <label for="pdbtask6input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask6ent5" id="pdbtask6input5">
+            </div>
+        </form>
+        <embed src="${pdf6}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-9" rel="10">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-10">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #7</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask7input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask7ent1" id="pdbtask7input1">
+                <label for="pdbtask7input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask7ent2" id="pdbtask7input2">
+                <label for="pdbtask7input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask7ent3" id="pdbtask7input3">
+                <label for="pdbtask7input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask7ent4" id="pdbtask7input4">
+                <label for="pdbtask7input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask7ent5" id="pdbtask7input5">
+            </div>
+        </form>
+        <embed src="${pdf7}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-10" rel="11">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-11">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #8</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask8input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask8ent1" id="pdbtask8input1">
+                <label for="pdbtask8input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask8ent2" id="pdbtask8input2">
+                <label for="pdbtask8input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask8ent3" id="pdbtask8input3">
+                <label for="pdbtask8input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask8ent4" id="pdbtask8input4">
+                <label for="pdbtask8input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask8ent5" id="pdbtask8input5">
+            </div>
+        </form>
+        <embed src="${pdf8}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-11" rel="12">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-12">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #9</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask9input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask9ent1" id="pdbtask9input1">
+                <label for="pdbtask9input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask9ent2" id="pdbtask9input2">
+                <label for="pdbtask9input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask9ent3" id="pdbtask9input3">
+                <label for="pdbtask9input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask9ent4" id="pdbtask9input4">
+                <label for="pdbtask9input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask9ent5" id="pdbtask9input5">
+            </div>
+        </form>
+        <embed src="${pdf9}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-12" rel="13">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-13">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #10</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask10input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask10ent1" id="pdbtask10input1">
+                <label for="pdbtask10input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask10ent2" id="pdbtask10input2">
+                <label for="pdbtask10input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask10ent3" id="pdbtask10input3">
+                <label for="pdbtask10input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask10ent4" id="pdbtask10input4">
+                <label for="pdbtask10input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask10ent5" id="pdbtask10input5">
+            </div>
+        </form>
+        <embed src="${pdf10}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-13" rel="14">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-14">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #11</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask11input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask11ent1" id="pdbtask11input1">
+                <label for="pdbtask11input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask11ent2" id="pdbtask11input2">
+                <label for="pdbtask11input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask11ent3" id="pdbtask11input3">
+                <label for="pdbtask11input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask11ent4" id="pdbtask11input4">
+                <label for="pdbtask11input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask11ent5" id="pdbtask11input5">
+            </div>
+        </form>
+        <embed src="${pdf11}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-14" rel="15">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-15">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #12</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask12input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask12ent1" id="pdbtask12input1">
+                <label for="pdbtask12input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask12ent2" id="pdbtask12input2">
+                <label for="pdbtask12input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask12ent3" id="pdbtask12input3">
+                <label for="pdbtask12input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask12ent4" id="pdbtask12input4">
+                <label for="pdbtask12input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask12ent5" id="pdbtask12input5">
+            </div>
+        </form>
+        <embed src="${pdf12}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-15" rel="16">Next Page &raquo;</a>
+    </div>
+</div><div class="ui-tabs-panel ui-tabs-hide" id="tabs-16">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h2>Task #13</h2>
+        <form>
+            <div class="form-group">
+                <label for="pdbtask13input1">1. </label>
+                <input type="text" class="form-control" name="pdbtask13ent1" id="pdbtask13input1">
+                <label for="pdbtask13input2">2. </label>
+                <input type="text" class="form-control" name="pdbtask13ent2" id="pdbtask13input2">
+                <label for="pdbtask13input3">3. </label>
+                <input type="text" class="form-control" name="pdbtask13ent3" id="pdbtask13input3">
+                <label for="pdbtask13input4">4. </label>
+                <input type="text" class="form-control" name="pdbtask13ent4" id="pdbtask13input4">
+                <label for="pdbtask13input5">5. </label>
+                <input type="text" class="form-control" name="pdbtask13ent5" id="pdbtask13input5">
+            </div>
+        </form>
+        <embed src="${pdf13}" width="100%" height="500" alt="pdf" pluginspage="http://www.adobe.com/products/acrobat/readstep2.html" style="margin-bottom:20px;">
+        <div>&nbsp;</div>
+        <a class="next-tab mover submit-page" href="#instructions-top" id="next-16" rel="17">Next Page &raquo;</a>
+    </div>
+</div><!-- Page 17 (Finished) -->
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-17">
+    <div class="col-xs-12 col-md-12 col-centered">
+        <h3>Thank you for completing the HIT! Your additional earnings of ${offer_amt} will be paid via the &quot;bonus&quot; feature. Click the &quot;Submit&quot; button below to finish.</h3>
+        <div>&nbsp;</div>
+        <input type="submit" id="submitButton" class="btn btn-primary center-block" value="Submit" style="">
+    </div>
+</div>
+<!-- End Page 17 (Finished) --><script>
+var isPreview = false;
+</script>
+    </div><!-- End tabs -->
+</div><!-- End page-wrap -->
+<style type="text/css">
+#show-hide-instructions {
+    color: white;
+    text-decoration: underline;
+}
+#show-hide-instructions:hover {
+    cursor: pointer;
+}
+a.mover {
+    background: #900;
+    padding: 6px 12px;
+    position: absolute;
+    color: white;
+    font-weight: bold;
+    text-decoration: none;
+}
+.next-tab {
+    bottom: 0;
+    right: 0;
+    -moz-border-radius-topleft: 10px;
+    -webkit-border-top-left-radius: 10px;
+}
+.prev-tab {
+    bottom: 0;
+    left: 0;
+    -moz-border-radius-topright: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+.imagecontainer {
+    display:block;
+    margin-left: auto;
+    margin-right: auto;
+    border:1px solid #fbfbfb;
+    width:1000px;
+}
+.inputfields {
+    display:block;
+    float:left;
+}
+.hidden {
+    display:none;
+}
+/*.ui-tabs .ui-tabs-panel {
+    border: none !important;
+}*/
+.ui-tabs.ui-widget-content {
+    border: none;
+}
+.pdbexample {
+    font-size: 90%;
+}
+.async-load {
+    background: url(https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif) 50% no-repeat;
+}
+</style>

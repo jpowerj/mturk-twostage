@@ -1,0 +1,56 @@
+<p>
+Please take a quick look at the PDF below and enter the top five "topics" indicated in the document in the following boxes:
+<script>
+function addRow(taskNum) {
+    // First, don't allow more than 100 items?
+    //var entList = $("#entlist");
+    //console.log(entList);
+    var entListSelector = "#entlist" + taskNum;
+    // Get last item
+    var lastLi = $(entListSelector + " li:nth-last-child(2)");
+    console.log(lastLi);
+    // The last <input> is the first child of the lastLi
+    var lastInput = lastLi.first();
+    console.log(lastInput);
+    var lastId = lastInput.attr('id');
+    // Add one to the num
+    var lastNum = parseInt(lastId.slice(-1));
+    var newNum = lastNum + 1;
+    var newLiId = "item" + newNum;
+    var newLi = $("<li>").attr('id', newLiId);
+    var newInputId = "ent" + newNum;
+    var newInput = $("<input>").attr('id', newInputId);
+    var newRemoveId = "remove" + newNum;
+    var removeButton = $("<button>").attr('id', newRemoveId).text("X").click(
+        function() {
+            var clickedElt = $(this);
+            removeRow(clickedElt);
+        }
+    );
+    newLi.append(newInput);
+    newLi.append(removeButton);
+    lastLi.after(newLi);
+    return false;
+}
+function removeRow(clickedElt) {
+    // Get clicked button
+    var clickedParent = clickedElt.parent();
+    console.log(clickedParent);
+    clickedParent.remove();
+    return false;
+}
+</script>
+<h2>Task #!task_num!</h2>
+<form>
+    <div class="form-group">
+        <ol id="entlist!task_num!">
+            <li id="t!task_num!item1"><input type="text" id="t!task_num!ent1"></li>
+            <li id="t!task_num!item2"><input type="text" id="t!task_num!ent2"></li>
+            <li id="t!task_num!item3"><input type="text" id="t!task_num!ent3"><br></li>
+            <li id="t!task_num!item4"><input type="text" id="t!task_num!ent4"><br></li>
+            <li id="t!task_num!item5"><input type="text" id="t!task_num!ent5"><br></li>
+            <li style="list-style-type:none;" id="t!task_num!itemAddNew"><a href="#" onclick="addRow(!task_num!);">Add Additional Row...</a></li>
+        </ol>
+    </div>
+</form>
+</p>

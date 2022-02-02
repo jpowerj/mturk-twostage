@@ -1,0 +1,976 @@
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" /><script src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script><!--<script src="//code.jquery.com/jquery-3.1.1.min.js"></script>--><script src="//code.jquery.com/jquery-1.10.2.js"></script><script src="//code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
+<link href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+<section class="container" id="SurveyLink"><!-- Instructions --><a name="instructions-top"></a>
+<div class="row col-xs-12 col-md-12"><!-- Instructions -->
+<div class="panel panel-primary">
+<div class="panel-heading"><strong>Instructions</strong><span> [<a href="#" id="show-hide-instructions">Hide</a>] </span></div>
+
+<div class="panel-body" id="instructionBody">
+<p><strong>Click and drag on the scanned page to create boxes around each&nbsp;unique&nbsp;recipe&nbsp;on the page</strong>. Then use the checkboxes before and after the image to specify whether the first recipe on the image looks like it's the continuation of a previous page, and whether it looks like the last recipe continues onto the next page.</p>
+
+<p>A <b>recipe</b> in this case includes <strong>a title, a list of ingredients, and directions</strong>. Please try to include all of these elements within the rectangles you draw. If one of the recipes is incomplete (for example, if it is continued from the prior page or continues onto the next page), capture as much of the recipe as you can within the rectangle.</p>
+
+<ul>
+	<li style="margin-left: 15px;">Click and drag on the image to add a rectangle</li>
+	<li style="margin-left: 15px;">Click on a rectangle and press Delete or Backspace to remove the rectangle</li>
+	<li style="margin-left: 15px;">Use the corners to resize the rectangle</li>
+	<li style="margin-left: 15px;">Note that the app will not allow you to create a new rectangle which overlaps an existing rectangle</li>
+</ul>
+<span><strong>If there are no recipes on the page</strong>, check the "There are no recipes on this page" box at the bottom before submitting.</span></div>
+</div>
+</div>
+<!-- End Instructions --></section>
+<script src="//uniqueturker.myleott.com/lib.js" type="text/javascript"></script><script type="text/javascript">
+(function(){
+    var ut_id = "1487bb820c14a8b30e9556c916668ced";
+    var cur_worker = turkGetParam('workerId', '');
+    if (UTWorkerLimitReached(ut_id) && cur_worker != "A1MQ6J9MV91LQZ") {
+        document.getElementById('mturk_form').style.display = 'none';
+        document.getElementsByTagName('body')[0].innerHTML = "You have already completed the maximum number of HITs allowed by this requester. Please click 'Return HIT' to avoid any impact on your approval rating.";
+    }
+})();
+</script><script type="text/javascript">
+var imgs = [];
+imgs[1] = "${img_url1}";
+imgs[2] = "${img_url2}";
+imgs[3] = "${img_url3}";
+imgs[4] = "${img_url4}";
+imgs[5] = "${img_url5}";
+imgs[6] = "${img_url6}";
+imgs[7] = "${img_url7}";
+imgs[8] = "${img_url8}";
+imgs[9] = "${img_url9}";
+imgs[10] = "${img_url10}";
+imgs[11] = "${img_url11}";
+imgs[12] = "${img_url12}";
+imgs[13] = "${img_url13}";
+imgs[14] = "${img_url14}";
+imgs[15] = "${img_url15}";
+imgs[16] = "${img_url16}";
+imgs[17] = "${img_url17}";
+imgs[18] = "${img_url18}";
+imgs[19] = "${img_url19}";
+imgs[20] = "${img_url20}";
+imgs[21] = "${img_url21}";
+imgs[22] = "${img_url22}";
+imgs[23] = "${img_url23}";
+
+//temporary
+//imgs[1] = "http://cs.stanford.edu/people/jjacobs3/cookbook_images/book_2/small-011.jpg";
+//imgs[2] = "http://cs.stanford.edu/people/jjacobs3/cookbook_images/book_2/small-012.jpg";
+//imgs[3] = "http://cs.stanford.edu/people/jjacobs3/cookbook_images/book_2/small-013.jpg";
+//imgs[4] = "http://cs.stanford.edu/people/jjacobs3/cookbook_images/book_2/small-014.jpg";
+//imgs[5] = "http://cs.stanford.edu/people/jjacobs3/cookbook_images/book_2/small-015.jpg";
+//imgs[6] = "http://cs.stanford.edu/people/jjacobs3/cookbook_images/book_2/small-016.jpg";
+// This var gets incremented as canvases are created
+var cur_image_num = 1;
+
+var canvas_list = [];
+
+function createCanvas(canvas_id, image_url, image_num) {
+  var canvas = new fabric.Canvas(canvas_id);
+  canvas.uniScaleTransform = true;
+  //canvas.setBackgroundImage("http://textlab.econ.columbia.edu/~jjacobs/recipe_hit/test-page.png", canvas.renderAll.bind(canvas));
+  
+  // Load the background image in
+var bg_img = new Image();
+bg_img.onload = function(){
+   var bg_width = bg_img.naturalWidth;
+   var width_id = "img_width_" + image_num;
+   document.getElementById(width_id).value = bg_width;
+   console.log(bg_width);
+   var bg_height = bg_img.naturalHeight;
+   var height_id = "img_height_" + image_num;
+   document.getElementById(height_id).value = bg_height;
+   console.log(bg_height);
+   canvas.setWidth(bg_width);
+   canvas.setHeight(bg_height);
+   canvas.calcOffset();
+   canvas.setBackgroundImage(bg_img.src, canvas.renderAll.bind(canvas), {
+            originX: 'left',
+            originY: 'top',
+            left: 0,
+            top: 0
+        });  
+};
+bg_img.src = image_url;
+  
+  var lastRectangle = null;
+  var creatingNewRectangle = false;
+
+ $(document).keydown(function(event){
+   console.log(event.which);
+   if (event.which == 46 || event.which == 8){
+     console.log("removing");
+     if (canvas.getActiveObject() != null){
+       canvas.getActiveObject().remove();
+     }
+     if (canvas.getActiveGroup()){
+       console.log("multiple objects selected");
+       canvas.getActiveGroup().forEachObject(function(o){ canvas.remove(o) });
+       canvas.discardActiveGroup().renderAll();
+     }
+   }
+   if (event.which == 90) {
+     // 90 = "Z"
+     throw "test error";
+   }
+ });
+
+  canvas.on('mouse:down', function (option) {
+      if (option.target != null) {
+          return;
+      } else {
+          var startY = option.e.offsetY,
+              startX = option.e.offsetX;
+
+          var rect2 = new fabric.Rect({
+              top : startY,
+              left : startX,
+              width : 0,
+              height : 0,
+              fill : 'transparent',
+              stroke: 'black',
+              strokeWidth: 4,
+              hasRotatingPoint: false,
+              transparentCorners: false
+          });
+
+          canvas.add(rect2);
+          lastRectangle = rect2;
+          creatingNewRectangle = true;
+          
+          rect2.bringToFront();
+
+          canvas.on('mouse:move', function (option) {
+              var e = option.e;
+              rect2.set('width', e.offsetX - startX);
+              rect2.set('height', e.offsetY - startY);
+              rect2.setCoords();
+          });
+
+
+      }
+  });
+
+  canvas.on('mouse:up', function () {
+      if (creatingNewRectangle) {
+        if (canvas.getActiveGroup()){
+          // They created a group. Discard it
+          canvas.discardActiveGroup().renderAll();
+          creatingNewRectangle = false;
+          lastRectangle.remove();
+          lastRectangle = null;
+          canvas.off("mouse:move");
+          return;
+        }
+        var obj = lastRectangle;
+        //console.log("obj.width = " + obj.width + ", obj.height = " + obj.height);
+        if (Math.abs(obj.width) < 15 || Math.abs(obj.height) < 15){
+          console.log("Accidental mouse click. Object removed");
+          obj.remove();
+          creatingNewRectangle = false;
+          lastRectangle = null;
+          canvas.off("mouse:move");
+          return;
+        } else {
+          console.log("Creating new rectangle");
+          // Ensure that the rectangle doesn't overlap an existing rectangle
+          // ...skipping for now, b/c tricky, but will implement if it's a big
+          // problem with the pilot results
+          var w = obj.width * obj.scaleX,
+                h = obj.height * obj.scaleY,
+                s = obj.strokeWidth;
+                
+          console.log("Height: " + h + ", Width: " + w + ", Stroke Width: " + s);
+          
+          // If height negative, have to change the "top" val
+          var t = obj.top * obj.scaleY;
+          if (h < 0) {
+            t = t + h;
+            h = Math.abs(h);
+          }
+          var l = obj.left * obj.scaleX;
+          if (w < 0) {
+            l = l + w;
+            w = Math.abs(w);
+          }
+
+          obj.set({
+            'top'        : t,
+            'left'       : l,
+            'height'     : h,
+            'width'      : w,
+            'scaleX'     : 1,
+            'scaleY'     : 1
+          });
+          obj.setCoords();
+          creatingNewRectangle = false;
+          lastRectangle = null;
+          canvas.renderAll();
+          canvas.setActiveObject(obj);
+          canvas.off("mouse:move");
+          return;
+        }
+      } else {
+        console.log("Resizing/moving an existing rectangle");
+        // Here we check if they made a group. If so, disband it
+        if (canvas.getActiveGroup()){
+          console.log("Discarding group");
+          canvas.discardActiveGroup().renderAll();
+          canvas.off("mouse:move");
+          return;
+        }
+        obj = canvas.getActiveObject();
+        var w = obj.width * obj.scaleX,
+                h = obj.height * obj.scaleY,
+                s = obj.strokeWidth;
+
+        obj.set({
+          'height'     : h,
+          'width'      : w,
+          'scaleX'     : 1,
+          'scaleY'     : 1
+        });
+        obj.setCoords();
+        canvas.setActiveObject(obj);
+        canvas.off("mouse:move");
+        return;
+      }
+  });
+  canvas_list.push(canvas);
+}
+function getBoxData(){
+  // Loop over all canvases, getting the box data for each
+  console.log("getBoxData()");
+  for (var canvas_num = 0; canvas_num < canvas_list.length; canvas_num++){
+    var cur_canvas = canvas_list[canvas_num];
+    console.log(cur_canvas);
+    var objs = cur_canvas.getObjects();
+    var box_data = "";
+    for (var i = 0; i < objs.length; i++){
+      var cur_obj = objs[i];
+      var cur_data_str = "" + i + "," + cur_obj.left + "," + cur_obj.top + "," + cur_obj.width + "," + cur_obj.height + ";";
+      //console.log(cur_data_str);
+      box_data = box_data + cur_data_str;
+    }
+    var cur_id = "box_data_" + (canvas_num+1);
+    document.getElementById(cur_id).value = box_data;
+    console.log(cur_id + " set to: " + box_data);
+  }
+  return true;
+}
+
+function boxesDrawn(canvas_num){
+  console.log("boxesDrawn(" + canvas_num + ")");
+  // Use canvas_list-1 because the canvas_nums start at 1 while array indexes in JS start at 0
+  var cur_canvas = canvas_list[canvas_num-1];
+  var objs = cur_canvas.getObjects();
+  console.log("cur_canvas.getObjects():")
+  console.log(objs)
+  if (objs.length < 1) {
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
+var preview = true;
+$(document).ready(function(){
+
+if (turkGetParam('assignmentId', '') != '' && turkGetParam('assignmentId', '') != 'ASSIGNMENT_ID_NOT_AVAILABLE') {
+  preview = false;
+}
+
+if (preview == false){
+  createCanvas("page1",imgs[1],1);
+  cur_image_num = cur_image_num + 1;
+  createCanvas("page2",imgs[2],2);
+  cur_image_num = cur_image_num + 1;
+}
+
+// unselect all of the radio buttons
+$("#submitButton").hide();
+$("input").prop("checked",false);
+
+$("#show-hide-instructions").click(function () {
+  if ($(".panel-body").is(":visible")) {
+    $(".panel-body").hide();
+    $(this).html("Show");
+  } else {
+    $(".panel-body").show();
+    $(this).html("Hide");
+  }
+  return false;
+});
+
+var $tabs = $('#tabs').tabs();
+
+$("#submit-consent").click(function(){
+var assignmentId = turkGetParam('assignmentId', '');
+if (turkGetParam('assignmentId', '') == '' || turkGetParam('assignmentId', '') == 'ASSIGNMENT_ID_NOT_AVAILABLE') {
+  alert("Please accept the HIT before continuing");
+  return false;
+} else {
+  if ($("#consent").is(":checked")){
+    $tabs.tabs('select', $(this).attr("rel"));
+    // Uncomment these two lines to hide the instructions once the user accepts the consent form
+    //$(".panel-body").hide();
+    //$("#show-hide-instructions").html("Show");
+  } else {
+    alert("You must agree to the consent statement in order to perform this HIT");
+    return false;
+  }
+}
+});
+
+$("#submit-demographic").click(function(){
+  if (!$.isNumeric($("#age").val())){
+    alert("Please enter a numeric value for the 'Age' field");
+    return false;
+  } else {
+    $tabs.tabs('select', $(this).attr("rel"));
+  }
+});
+
+//$("#back-one").click(function(){
+//  $tabs.tabs('select', $(this).attr("rel"));
+//});
+
+$(".submit-page").click(function(){
+  // First, check whether they drew the boxes (or checked "no recipes")
+  var image_submitted = $(this).attr("id");
+  var submitted_num = parseInt(image_submitted);
+  console.log("Checking page " + submitted_num);
+  var checkbox_id = "no_text_checkbox" + submitted_num;
+  if (!boxesDrawn(submitted_num) && !document.getElementById(checkbox_id).checked) {
+    alert("Please draw rectangles around each unique recipe on the page, or check \"There are no recipes on this page\" at the bottom of the panel.");
+    return false;
+  }
+
+  // Check if there are still more images to load. If so, call createCanvas()
+  var hittype = parseInt(document.getElementById("hiddenhittype").innerHTML);
+  var num_images = hittype + 1
+  if (cur_image_num <= num_images){
+    createCanvas("page"+cur_image_num, imgs[cur_image_num],cur_image_num);
+    cur_image_num = cur_image_num + 1;
+  }
+
+  // Next, check if the next page is an offer, an additional page, or finished
+  var next_tab = $(this).attr("rel");
+  var final_tab = $(this).attr("title");
+  if (submitted_num == 1) {
+    // First image submitted, go to the next tab but show the submit button
+    $tabs.tabs('select', next_tab);
+    $("#submitButton").show();
+  } else if (submitted_num == num_images) {
+    // Final image submitted, go to finished page and show the submit button
+    $tabs.tabs('select', final_tab);
+    $("#submitButton").show();
+  } else {
+    // Just show next image
+    $tabs.tabs('select', next_tab);
+  }
+});
+
+$("#back-to-page").click(function(){
+  $tabs.tabs('select', $(this).attr("rel"));
+  $("#submitButton").hide();
+});
+
+$(".accept-offer").click(function(){
+  $tabs.tabs('select', $(this).attr("rel"));
+  $("#submitButton").hide();
+  var offer_num = $(this).attr("title");
+  var offer_input_id = "accepted-" + offer_num;
+  document.getElementById(offer_input_id).value = "yes";
+});
+
+$("#submitButton").click(function(){
+  return getBoxData();
+});
+
+});
+
+</script><!-- Survey Link Layout -->
+
+<div id="page-wrap"><a name="tabs"></a>
+
+<div id="tabs">
+<div id="hiddenbatchid" style="display: none;">${batch_id}</div>
+
+<div id="hiddenhittype" style="display: none;">${hit_type}</div>
+
+<div id="hiddendiv" style="display: none;">
+<ul>
+	<li><a href="#tabs-1">Consent Form</a></li>
+	<li><a href="#tabs-2">Demographic Survey</a></li>
+	<li><a href="#tabs-3">Page 1</a></li>
+	<li><a href="#tabs-4">Page 2 Offer</a></li>
+	<li><a href="#tabs-5">Page 2</a></li>
+	<li><a href="#tabs-6">Page 3</a></li>
+	<li><a href="#tabs-7">Page 4</a></li>
+	<li><a href="#tabs-8">Page 5</a></li>
+	<li><a href="#tabs-9">Page 6</a></li>
+	<li><a href="#tabs-10">Page 7</a></li>
+	<li><a href="#tabs-11">Page 8</a></li>
+	<li><a href="#tabs-12">Page 9</a></li>
+	<li><a href="#tabs-13">Page 10</a></li>
+	<li><a href="#tabs-14">Page 11</a></li>
+	<li><a href="#tabs-15">Page 12</a></li>
+	<li><a href="#tabs-16">Page 13</a></li>
+	<li><a href="#tabs-17">Page 14</a></li>
+	<li><a href="#tabs-18">Page 15</a></li>
+	<li><a href="#tabs-19">Page 16</a></li>
+	<li><a href="#tabs-20">Page 17</a></li>
+	<li><a href="#tabs-21">Page 18</a></li>
+	<li><a href="#tabs-22">Page 19</a></li>
+	<li><a href="#tabs-23">Page 20</a></li>
+	<li><a href="#tabs-24">Page 21</a></li>
+	<li><a href="#tabs-25">Page 22</a></li>
+	<li><a href="#tabs-26">Page 23</a></li>
+	<li><a href="#tabs-27">Finished</a></li>
+</ul>
+</div>
+<!-- Consent Form -->
+
+<div class="ui-tabs-panel" id="tabs-1">
+<p>The data you provide through your participation can be used in scientific publications, and shared with other researchers for scientific, non-commercial purposes. We will not use or share this data in any other way. <b>Identifying information will never be used or shared</b>. In particular, your MTurk ID will be replaced with an arbitrary alphanumeric code.</p>
+
+<p><label><input id="consent" name="consent" type="checkbox" value="yes" />&nbsp;I agree to participate in this study</label></p>
+
+<p>(Remember to <b>accept the HIT</b> before continuing! Then click "Next Page")</p>
+
+<div>&nbsp;</div>
+<a class="next-tab mover" href="#instructions-top" id="submit-consent" rel="2">Next Page &raquo;</a></div>
+<!-- End Consent Form --><!-- Demographic Survey -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-2">Please enter some basic demographic information about yourself:
+<fieldset>Age:<br />
+<input id="age" name="age" type="text" /><br />
+Gender:<br />
+<select name="gender"><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option><option value="optout">Prefer not to say</option> </select><br />
+State:<br />
+<select name="state"><option value="al">Alabama</option><option value="ak">Alaska</option><option value="az">Arizona</option><option value="ar">Arkansas</option><option value="ca">California</option><option value="co">Colorado</option><option value="ct">Connecticut</option><option value="de">Delaware</option><option value="fl">Florida</option><option value="ga">Georgia</option><option value="hi">Hawaii</option><option value="id">Idaho</option><option value="il">Illinois</option><option value="in">Indiana</option><option value="ia">Iowa</option><option value="ks">Kansas</option><option value="ky">Kentucky</option><option value="la">Louisiana</option><option value="me">Maine</option><option value="md">Maryland</option><option value="ma">Massachusetts</option><option value="mi">Michigan</option><option value="mn">Minnesota</option><option value="ms">Mississippi</option><option value="mo">Missouri</option><option value="mt">Montana</option><option value="ne">Nebraska</option><option value="nv">Nevada</option><option value="nh">New Hampshire</option><option value="nj">New Jersey</option><option value="nm">New Mexico</option><option value="ny">New York</option><option value="nc">North Carolina</option><option value="nd">North Dakota</option><option value="oh">Ohio</option><option value="ok">Oklahoma</option><option value="or">Oregon</option><option value="pa">Pennsylvania</option><option value="ri">Rhode Island</option><option value="sc">South Carolina</option><option value="sd">South Dakota</option><option value="tn">Tennessee</option><option value="tx">Texas</option><option value="ut">Utah</option><option value="vt">Vermont</option><option value="va">Virginia</option><option value="wa">Washington</option><option value="wv">West Virginia</option><option value="wi">Wisconsin</option><option value="wy">Wyoming</option> </select></fieldset>
+
+<div>&nbsp;</div>
+<a class="next-tab mover" href="#instructions-top" id="submit-demographic" rel="3">Next Page &raquo;</a></div>
+<!-- End Demographic Survey --><!-- BEGIN AUTO-GENERATED CODE --><!-- Page 1 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-3">
+<h2>Page 1</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox1" name="contd_prev1" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page1"></canvas> <input id="box_data_1" name="box_data_1" type="hidden" /> <input id="img_width_1" name="img_width_1" type="hidden" /> <input id="img_height_1" name="img_height_1" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox1"><input id="next_checkbox1" name="contd_next1" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox1"><input id="no_text_checkbox1" name="no_text1" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="1" rel="4" title="27">Next Page &raquo;</a></div>
+<!-- End Page 1 --><!-- Page 1 Offer -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-4">
+<h3>If you'd like to continue and perform ${hit_type} additional recipe location tasks for ${offer_amt}, please click "Next Page" below.</h3>
+
+<h3>Otherwise, click the "Submit" button at the bottom of the page.</h3>
+
+<div>&nbsp;</div>
+<input id="accepted-1" name="accepted-1" type="hidden" /> <a class="next-tab mover accept-offer" href="#instructions-top" id="accept-1" rel="5" title="1">Next Page &raquo;</a></div>
+<!-- End Page 1 Offer --><!-- Page 2 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-5">
+<h2>Page 2</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox2" name="contd_prev2" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page2"></canvas> <input id="box_data_2" name="box_data_2" type="hidden" /> <input id="img_width_2" name="img_width_2" type="hidden" /> <input id="img_height_2" name="img_height_2" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox2"><input id="next_checkbox2" name="contd_next2" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox2"><input id="no_text_checkbox2" name="no_text2" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="2" rel="6" title="27">Next Page &raquo;</a></div>
+<!-- End Page 2 --><!-- Page 3 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-6">
+<h2>Page 3</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox3" name="contd_prev3" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page3"></canvas> <input id="box_data_3" name="box_data_3" type="hidden" /> <input id="img_width_3" name="img_width_3" type="hidden" /> <input id="img_height_3" name="img_height_3" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox3"><input id="next_checkbox3" name="contd_next3" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox3"><input id="no_text_checkbox3" name="no_text3" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="3" rel="7" title="27">Next Page &raquo;</a></div>
+<!-- End Page 3 --><!-- Page 4 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-7">
+<h2>Page 4</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox4" name="contd_prev4" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page4"></canvas> <input id="box_data_4" name="box_data_4" type="hidden" /> <input id="img_width_4" name="img_width_4" type="hidden" /> <input id="img_height_4" name="img_height_4" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox4"><input id="next_checkbox4" name="contd_next4" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox4"><input id="no_text_checkbox4" name="no_text4" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="4" rel="8" title="27">Next Page &raquo;</a></div>
+<!-- End Page 4 --><!-- Page 5 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-8">
+<h2>Page 5</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox5" name="contd_prev5" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page5"></canvas> <input id="box_data_5" name="box_data_5" type="hidden" /> <input id="img_width_5" name="img_width_5" type="hidden" /> <input id="img_height_5" name="img_height_5" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox5"><input id="next_checkbox5" name="contd_next5" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox5"><input id="no_text_checkbox5" name="no_text5" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="5" rel="9" title="27">Next Page &raquo;</a></div>
+<!-- End Page 5 --><!-- Page 6 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-9">
+<h2>Page 6</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox6" name="contd_prev6" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page6"></canvas> <input id="box_data_6" name="box_data_6" type="hidden" /> <input id="img_width_6" name="img_width_6" type="hidden" /> <input id="img_height_6" name="img_height_6" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox6"><input id="next_checkbox6" name="contd_next6" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox6"><input id="no_text_checkbox6" name="no_text6" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="6" rel="10" title="27">Next Page &raquo;</a></div>
+<!-- End Page 6 --><!-- Page 7 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-10">
+<h2>Page 7</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox7" name="contd_prev7" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page7"></canvas> <input id="box_data_7" name="box_data_7" type="hidden" /> <input id="img_width_7" name="img_width_7" type="hidden" /> <input id="img_height_7" name="img_height_7" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox7"><input id="next_checkbox7" name="contd_next7" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox7"><input id="no_text_checkbox7" name="no_text7" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="7" rel="11" title="27">Next Page &raquo;</a></div>
+<!-- End Page 7 --><!-- Page 8 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-11">
+<h2>Page 8</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox8" name="contd_prev8" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page8"></canvas> <input id="box_data_8" name="box_data_8" type="hidden" /> <input id="img_width_8" name="img_width_8" type="hidden" /> <input id="img_height_8" name="img_height_8" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox8"><input id="next_checkbox8" name="contd_next8" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox8"><input id="no_text_checkbox8" name="no_text8" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="8" rel="12" title="27">Next Page &raquo;</a></div>
+<!-- End Page 8 --><!-- Page 9 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-12">
+<h2>Page 9</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox9" name="contd_prev9" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page9"></canvas> <input id="box_data_9" name="box_data_9" type="hidden" /> <input id="img_width_9" name="img_width_9" type="hidden" /> <input id="img_height_9" name="img_height_9" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox9"><input id="next_checkbox9" name="contd_next9" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox9"><input id="no_text_checkbox9" name="no_text9" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="9" rel="13" title="27">Next Page &raquo;</a></div>
+<!-- End Page 9 --><!-- Page 10 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-13">
+<h2>Page 10</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox10" name="contd_prev10" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page10"></canvas> <input id="box_data_10" name="box_data_10" type="hidden" /> <input id="img_width_10" name="img_width_10" type="hidden" /> <input id="img_height_10" name="img_height_10" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox10"><input id="next_checkbox10" name="contd_next10" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox10"><input id="no_text_checkbox10" name="no_text10" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="10" rel="14" title="27">Next Page &raquo;</a></div>
+<!-- End Page 10 --><!-- Page 11 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-14">
+<h2>Page 11</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox11" name="contd_prev11" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page11"></canvas> <input id="box_data_11" name="box_data_11" type="hidden" /> <input id="img_width_11" name="img_width_11" type="hidden" /> <input id="img_height_11" name="img_height_11" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox11"><input id="next_checkbox11" name="contd_next11" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox11"><input id="no_text_checkbox11" name="no_text11" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="11" rel="15" title="27">Next Page &raquo;</a></div>
+<!-- End Page 11 --><!-- Page 12 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-15">
+<h2>Page 12</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox12" name="contd_prev12" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page12"></canvas> <input id="box_data_12" name="box_data_12" type="hidden" /> <input id="img_width_12" name="img_width_12" type="hidden" /> <input id="img_height_12" name="img_height_12" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox12"><input id="next_checkbox12" name="contd_next12" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox12"><input id="no_text_checkbox12" name="no_text12" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="12" rel="16" title="27">Next Page &raquo;</a></div>
+<!-- End Page 12 --><!-- Page 13 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-16">
+<h2>Page 13</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox13" name="contd_prev13" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page13"></canvas> <input id="box_data_13" name="box_data_13" type="hidden" /> <input id="img_width_13" name="img_width_13" type="hidden" /> <input id="img_height_13" name="img_height_13" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox13"><input id="next_checkbox13" name="contd_next13" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox13"><input id="no_text_checkbox13" name="no_text13" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="13" rel="17" title="27">Next Page &raquo;</a></div>
+<!-- End Page 13 --><!-- Page 14 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-17">
+<h2>Page 14</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox14" name="contd_prev14" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page14"></canvas> <input id="box_data_14" name="box_data_14" type="hidden" /> <input id="img_width_14" name="img_width_14" type="hidden" /> <input id="img_height_14" name="img_height_14" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox14"><input id="next_checkbox14" name="contd_next14" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox14"><input id="no_text_checkbox14" name="no_text14" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="14" rel="18" title="27">Next Page &raquo;</a></div>
+<!-- End Page 14 --><!-- Page 15 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-18">
+<h2>Page 15</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox15" name="contd_prev15" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page15"></canvas> <input id="box_data_15" name="box_data_15" type="hidden" /> <input id="img_width_15" name="img_width_15" type="hidden" /> <input id="img_height_15" name="img_height_15" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox15"><input id="next_checkbox15" name="contd_next15" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox15"><input id="no_text_checkbox15" name="no_text15" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="15" rel="19" title="27">Next Page &raquo;</a></div>
+<!-- End Page 15 --><!-- Page 16 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-19">
+<h2>Page 16</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox16" name="contd_prev16" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page16"></canvas> <input id="box_data_16" name="box_data_16" type="hidden" /> <input id="img_width_16" name="img_width_16" type="hidden" /> <input id="img_height_16" name="img_height_16" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox16"><input id="next_checkbox16" name="contd_next16" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox16"><input id="no_text_checkbox16" name="no_text16" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="16" rel="20" title="27">Next Page &raquo;</a></div>
+<!-- End Page 16 --><!-- Page 17 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-20">
+<h2>Page 17</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox17" name="contd_prev17" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page17"></canvas> <input id="box_data_17" name="box_data_17" type="hidden" /> <input id="img_width_17" name="img_width_17" type="hidden" /> <input id="img_height_17" name="img_height_17" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox17"><input id="next_checkbox17" name="contd_next17" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox17"><input id="no_text_checkbox17" name="no_text17" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="17" rel="21" title="27">Next Page &raquo;</a></div>
+<!-- End Page 17 --><!-- Page 18 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-21">
+<h2>Page 18</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox18" name="contd_prev18" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page18"></canvas> <input id="box_data_18" name="box_data_18" type="hidden" /> <input id="img_width_18" name="img_width_18" type="hidden" /> <input id="img_height_18" name="img_height_18" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox18"><input id="next_checkbox18" name="contd_next18" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox18"><input id="no_text_checkbox18" name="no_text18" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="18" rel="22" title="27">Next Page &raquo;</a></div>
+<!-- End Page 18 --><!-- Page 19 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-22">
+<h2>Page 19</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox19" name="contd_prev19" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page19"></canvas> <input id="box_data_19" name="box_data_19" type="hidden" /> <input id="img_width_19" name="img_width_19" type="hidden" /> <input id="img_height_19" name="img_height_19" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox19"><input id="next_checkbox19" name="contd_next19" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox19"><input id="no_text_checkbox19" name="no_text19" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="19" rel="23" title="27">Next Page &raquo;</a></div>
+<!-- End Page 19 --><!-- Page 20 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-23">
+<h2>Page 20</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox20" name="contd_prev20" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page20"></canvas> <input id="box_data_20" name="box_data_20" type="hidden" /> <input id="img_width_20" name="img_width_20" type="hidden" /> <input id="img_height_20" name="img_height_20" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox20"><input id="next_checkbox20" name="contd_next20" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox20"><input id="no_text_checkbox20" name="no_text20" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="20" rel="24" title="27">Next Page &raquo;</a></div>
+<!-- End Page 20 --><!-- Page 21 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-24">
+<h2>Page 21</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox21" name="contd_prev21" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page21"></canvas> <input id="box_data_21" name="box_data_21" type="hidden" /> <input id="img_width_21" name="img_width_21" type="hidden" /> <input id="img_height_21" name="img_height_21" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox21"><input id="next_checkbox21" name="contd_next21" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox21"><input id="no_text_checkbox21" name="no_text21" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="21" rel="25" title="27">Next Page &raquo;</a></div>
+<!-- End Page 21 --><!-- Page 22 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-25">
+<h2>Page 22</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox22" name="contd_prev22" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page22"></canvas> <input id="box_data_22" name="box_data_22" type="hidden" /> <input id="img_width_22" name="img_width_22" type="hidden" /> <input id="img_height_22" name="img_height_22" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox22"><input id="next_checkbox22" name="contd_next22" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox22"><input id="no_text_checkbox22" name="no_text22" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="22" rel="26" title="27">Next Page &raquo;</a></div>
+<!-- End Page 22 --><!-- Page 23 -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-26">
+<h2>Page 23</h2>
+
+<div class="col-xs-12 col-md-12 col-centered">
+<div id="prev_div">
+<p><label for="prev_checkbox"><input id="prev_checkbox23" name="contd_prev23" type="checkbox" />The first recipe on this page looks like it's continued from a previous page.</label></p>
+</div>
+<canvas id="page23"></canvas> <input id="box_data_23" name="box_data_23" type="hidden" /> <input id="img_width_23" name="img_width_23" type="hidden" /> <input id="img_height_23" name="img_height_23" type="hidden" />
+<div id="next_div">
+<p><label for="next_checkbox23"><input id="next_checkbox23" name="contd_next23" type="checkbox" />The last recipe on this page looks like it continues onto the next page.</label></p>
+</div>
+
+<div id="no_text_div">
+<p><label for="no_text_checkbox23"><input id="no_text_checkbox23" name="no_text23" type="checkbox" />There are no recipes on this page.</label></p>
+</div>
+</div>
+
+<div>&nbsp;</div>
+<a class="next-tab mover submit-page" href="#instructions-top" id="23" rel="27" title="27">Next Page &raquo;</a></div>
+<!-- End Page 23 --><!-- Finished -->
+
+<div class="ui-tabs-panel ui-tabs-hide" id="tabs-27">
+<h3>Thank you for completing the HIT! Your additional earnings will be paid via the "bonus" feature. Click the "Submit" button below to finish.</h3>
+
+<div>&nbsp;</div>
+</div>
+<!-- END AUTO-GENERATED CODE --></div>
+<!-- end #tabs --></div>
+<!-- end #page-wrap -->
+<style type="text/css">#show-hide-instructions {
+color: white;
+text-decoration: underline;
+}
+#show-hide-instructions:hover {
+cursor: pointer;
+}
+a.mover 							{ background: #900; padding: 6px 12px; position: absolute;
+								      color: white; font-weight: bold; text-decoration: none; }
+.next-tab 							{ bottom: 0; right: 0; -moz-border-radius-topleft: 10px; -webkit-border-top-left-radius: 10px; }
+.prev-tab 							{ bottom: 0; left: 0; -moz-border-radius-topright: 10px; -webkit-border-top-right-radius: 10px; }
+.imagecontainer { display:block; margin-left: auto; margin-right: auto; border:1px solid #fbfbfb; width:1000px; } .inputfields { display:block; float:left; }
+.hidden { display:none;}
+.async-load { background: url(https://upload.wikimedia.org/wikipedia/commons/d/de/Ajax-loader.gif) 50% no-repeat; }
+</style>

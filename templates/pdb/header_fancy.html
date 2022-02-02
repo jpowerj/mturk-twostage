@@ -1,0 +1,126 @@
+<meta content="width=device-width,initial-scale=1" name="viewport" />
+<link href="https://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css" rel="stylesheet" />
+<link href="https://s3.amazonaws.com/mturk-public/bs30/css/bootstrap.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!--<script src="//cdnjs.cloudflare.com/ajax/libs/fabric.js/1.7.3/fabric.min.js"></script>-->
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script>
+    function addRow(taskNum) {
+        // First, don't allow more than 100 items?
+        //var entList = $("#entlist");
+        //console.log(entList);
+        var entListSelector = "#entlist" + taskNum;
+        // Get last item
+        var lastLi = $(entListSelector + " li:nth-last-child(2)");
+        console.log(lastLi);
+        // The last <input> is the first child of the lastLi
+        var lastInput = lastLi.first();
+        console.log(lastInput);
+        var lastId = lastInput.attr('id');
+        // Add one to the num
+        var lastNum = parseInt(lastId.slice(-1));
+        var newNum = lastNum + 1;
+        var newLiId = "item" + newNum;
+        var newLi = $("<li>").attr('id', newLiId);
+        var newInputId = "ent" + newNum;
+        var newInput = $("<input>").attr('id', newInputId);
+        var newRemoveId = "remove" + newNum;
+        var removeButton = $("<button>").attr('id', newRemoveId).text("X").click(
+            function() {
+                var clickedElt = $(this);
+                return removeRow(clickedElt);
+            }
+        );
+        newLi.append(newInput);
+        newLi.append(removeButton);
+        lastLi.after(newLi);
+        return false;
+    }
+    function removeRow(clickedElt) {
+        // Get clicked button
+        var clickedParent = clickedElt.parent();
+        console.log(clickedParent);
+        clickedParent.remove();
+        return false;
+    }
+    $(document).ready(function(){
+        var num_tabs = !num_pages!;
+        var num_tasks = !num_tasks!;
+        var first_task_page = 3;
+        var $tabs = $( "#tabs" ).tabs();
+    // unselect all of the radio buttons
+    $("#submitButton").hide();
+    $("input").prop("checked",false);
+    $("#show-hide-instructions").click(function () {
+        if ($(".panel-body").is(":visible")) {
+            $(".panel-body").hide();
+            $(this).html("Show");
+        } else {
+            $(".panel-body").show();
+            $(this).html("Hide");
+        }
+        return false;
+    });
+    $("#submit-consent").click(function(){
+        var assignmentId = turkGetParam('assignmentId', '');
+        if (turkGetParam('assignmentId', '') == '' || turkGetParam('assignmentId', '') == 'ASSIGNMENT_ID_NOT_AVAILABLE') {
+            alert("Please accept the HIT before continuing");
+            return false;
+        } else {
+            if ($("#consent").is(":checked")){
+                $tabs.tabs('option', 'active', $(this).attr("rel"));
+                // Uncomment these two lines to hide the instructions once the user accepts the consent form
+                //$(".panel-body").hide();
+                //$("#show-hide-instructions").html("Show");
+            } else {
+                alert("You must agree to the consent statement in order to perform this HIT");
+                return false;
+            }
+        }
+    });
+
+    $("#submit-demographic").click(function(){
+        if (!$.isNumeric($("#age").val())){
+            alert("Please enter a numeric value for the 'Age' field");
+            return false;
+        } else {
+            $tabs.tabs('option', 'active', $(this).attr("rel"));
+        }
+    });
+
+    $(".submit-page").click(function(){
+        // Next, check if the next page is an offer, an additional page, or finished
+        var this_id = $(this).attr("id");
+        var this_tabnum = this_id.split("-").slice(-1);
+        console.log("Submitting tab #" + this_tabnum);
+        var next_tab = $(this).attr("rel");
+        var final_tab = $(this).attr("title");
+        if (this_tabnum == first_task_page) {
+            // First image submitted, go to the next tab but show the submit button
+            $tabs.tabs('option', 'active', next_tab);
+            $("#submitButton").show();
+        //} else if (submitted_num == num_images) {
+        //    // Final image submitted, go to finished page and show the submit button
+        //    $tabs.tabs('select', final_tab);
+        //    $("#submitButton").show();
+        } else {
+            // Just show next image
+            $tabs.tabs('option', 'active', next_tab);
+        }
+    });
+
+    $("#back-to-page").click(function(){
+        $tabs.tabs('option', 'active', $(this).attr("rel"));
+        $("#submitButton").hide();
+    });
+
+    $(".accept-offer").click(function(){
+        $tabs.tabs('option', 'active', $(this).attr("rel"));
+        $("#submitButton").hide();
+        var offer_num = $(this).attr("title");
+        var offer_input_id = "accepted-" + offer_num;
+        document.getElementById(offer_input_id).value = "yes";
+    });
+});
+
+</script>
