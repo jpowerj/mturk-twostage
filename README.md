@@ -101,7 +101,7 @@ Here we just list the *names* of each function, with links to their documentatio
 * [`get_hit_submissions()`](../../wiki#get_hit_submissions)
 * [`get_qual_id()`](../../wiki#get_qual_id)
 * [`get_workers_with_qual()`](../../wiki#get_workers_with_qual)
-* [`launch_custom_hit`](../../wiki#launch_custom_hit)
+* [`launch_custom_hit()`](../../wiki#launch_custom_hit)
 * [`localize_datetime()`](../../wiki#localize_datetime)
 * [`notify_worker()`:](../../wiki#notify_worker)
 * [`parse_stage1_answer()`](../../wiki#parse_stage1_answer)
