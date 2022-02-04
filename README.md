@@ -1,17 +1,15 @@
 # Code for Two-Stage Monopsony Experiments on MTurk
 
-## Pipeline Overview
+## Global Vars/Constants/Functions in `mtglobals.py`
 
-### Part 0: `mtglobals.py`: Global Vars/Constants/Functions
+Set these (unless the defaults match the desired run parameters) before starting the pipeline.
 
-
-
-#### Global Variables:
+### Global Variables:
 
 * `wage_dist`: The list of wages (as strings) randomly sampled from when generating wage for each HIT. Default: `['0.50','0.90','0.95','0.98','0.99', '1.00', '1.01','1.02','1.05','1.10','1.50']`
 * `num_hits`: The number of stage-1 HITs to launch (and so, also the number of stage-2 HITs that will be created). Default: 1000
 
-#### Global Constants:
+### Global Constants:
 
 * `default_keys_fpath`: The default fpath for the .csv file containing AWS access + secret keys.
 * `participant_qual_id`: The MTurk qual id for the participation qual
@@ -21,6 +19,8 @@
 * `stage2_launched_fpath`: filepath for the .csv where each row is a launched stage 2 HIT
 * `stage2_submitted_fpath`: filepath for the .pkl containing the list of workers who *submitted* their custom stage-2 HIT
 * `pacific`: The `pytz` object representing the Pacific timezone, for datetime localization
+
+## The Pipeline
 
 ### Part 1: Generate and Launch First-Stage HIT
 
@@ -85,29 +85,29 @@
 
 Here we just list the *names* of each function, with links to their documentation entry in [the Wiki](../wiki).
 
-* `add_posted_worker()`
-* `assign_qual_safe()`
-* `assign_stage2_quals()`
-* `check_launched()`
-* `create_new_qual()`
-* `download_all_hits()`
-* `gen_client()`
-* `gen_custom_hit()`
-* `gen_timestamp()`
-* `gen_qual_restriction()`
-* `get_all_quals()`
-* `get_current_qual()`:
-* `get_hit_for_worker()`
-* `get_hit_submissions()`
-* `get_qual_id()`
-* `get_workers_with_qual()`
-* `launch_custom_hit`
-* `localize_datetime()`
-* `notify_worker()`:
-* `parse_stage1_answer()`
-* `qual_exists()`
-* `random_wage()`
-* `update_current_qual()`
-* `update_launched_worker()`
-* `worker_id_from_title()`
-* [`write_log(msg)`](../wiki/write_log)
+* [`add_posted_worker()`](../wiki#add-posted-worker)
+* [`assign_qual_safe()`](../wiki#assign-qual-safe)
+* [`assign_stage2_quals()`](../wiki#assign-stage2-quals)
+* [`check_launched()`](../wiki#check-launched)
+* [`create_new_qual()`](../wiki#create-new-qual)
+* [`download_all_hits()`](../wiki#download-all-hits)
+* [`gen_client()`](../wiki#gen-client)
+* [`gen_custom_hit()`](../wiki#gen-custom-hit)
+* [`gen_timestamp()`](../wiki#gen-timestamp)
+* [`gen_qual_restriction()`](../wiki#gen-qual-restriction)
+* [`get_all_quals()`](../wiki#get-all-quals)
+* [`get_current_qual()`:](../wiki#get-current-qual)
+* [`get_hit_for_worker()`](../wiki#get-hit-for-worker)
+* [`get_hit_submissions()`](../wiki#get-hit-submissions)
+* [`get_qual_id()`](../wiki#get-qual-id)
+* [`get_workers_with_qual()`](../wiki#get-workers-with-qual)
+* [`launch_custom_hit`](../wiki#launch-custom-hit)
+* [`localize_datetime()`](../wiki#localize-datetime)
+* [`notify_worker()`:](../wiki#notify-worker)
+* [`parse_stage1_answer()`](../wiki#parse-stage1-answer)
+* [`qual_exists()`](../wiki#qual-exists)
+* [`random_wage()`](../wiki#random-wage)
+* [`update_current_qual()`](../wiki#update-current-qual)
+* [`update_launched_worker()`](../wiki#update-launched-worker)
+* [`worker_id_from_title()`](../wiki#worker-id-from-title)
+* [`write_log(msg)`](../wiki#write_log)
