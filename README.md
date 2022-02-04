@@ -3,6 +3,10 @@
 ## Pipeline Overview
 
 1. [01a_CreateNewQual.ipynb](../../blob/main/code/01a_CreateNewQual.ipynb): Create a new qual for the current run
+   1. Get info for the previous (most recent) custom qual
+   2. Enter the info for the new qual to be created
+   3. Create the new qual via MTurk API
+   4. And update the locally-stored info on the current qual
 2. [01b_PostStage1.ipynb](../../blob/main/code/01b_PostStage1.ipynb): Launch N stage-1 HITs
 3. [01c_MonitorStage1.ipynb](../../blob/main/code/01c_MonitorStage1.ipynb): Monitor the stage-1 HITs (eventually getting a list of the N respondents)
 4. [02a_PostStage2.ipynb](../../blob/main/code/02a_PostStage2.ipynb): Launch N stage-2 HITs, customized for each stage-1 respondent
