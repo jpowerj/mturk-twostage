@@ -42,6 +42,12 @@ stage2_launched_fpath = os.path.join("..","results_2stage","stage2_launched_work
 # stage 2 HIT
 stage2_submitted_fpath = os.path.join("..","results_2stage","stage2_submitted_workers.pkl")
 
+# The filepath to the log written to when `write_log()` is called
+log_fpath = './mtlog.txt'
+
+# The `pytz` object representing the Pacific timezone, for datetime localization
+pacific = pytz.timezone('US/Pacific')
+
 ### Global functions ###
 
 def add_posted_worker(cur_worker_id, cur_offer_amt, cur_qual_name, cur_qual_id,
@@ -156,7 +162,7 @@ def assign_stage2_quals(client, cur_worker_id, cur_qual_name, cur_qual_id,
     
 def check_launched(launched_df, worker_id):
     """
-    Check `launched_df` to see if the 2nd-stage hit has already been launched
+    Checks `launched_df` to see if the 2nd-stage hit has already been launched
     for this worker. If so, return the qual_name, qual_num and offer_amt they
     were assigned, otherwise return "",-1,-1
     """
@@ -403,25 +409,7 @@ def gen_qual_restriction(cur_qual_id, cur_qual_num):
     return stage2_requirements
 
 def get_all_quals(client):
-    """
-    For when we reach the limit of 100 numbers per qual (0-99), so need to create
-    a new qualification that we can assign. The syntax is:
-    
-    response = client.create_qualification_type(
-        Name='string',
-        Keywords='string',
-        Description='string',
-        QualificationTypeStatus='Active'|'Inactive',
-        RetryDelayInSeconds=123,
-        Test='string',
-        AnswerKey='string',
-        TestDurationInSeconds=123,
-        AutoGranted=True|False,
-        AutoGrantedValue=123
-    )
-    
-    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/mturk.html#MTurk.Client.create_qualification_type
-    
+    """    
     and for listing the existing types:
     response = client.list_qualification_types(
         Query='string',
@@ -443,6 +431,9 @@ def get_all_quals(client):
     return qual_list
 
 def get_current_qual():
+    """
+    Gets the info for the qual being used for the current run
+    """
     with open("../results_2stage/current_qual.txt", 'r', encoding='utf-8') as f:
         qual_info = f.read()
     qual_elts = qual_info.strip().split(",")
@@ -456,6 +447,9 @@ def get_current_qual():
             'last_qual_num': last_qual_num, 'last_offer_amt': last_offer_amt}
 
 def get_hit_for_worker(all_hits, worker_id, verbose=False):
+    """
+    Looks in the list `all_hits` and returns the entry representing the custom HIT created for the worker with id `worker_id`
+    """
     vprint = print if verbose else lambda x: None
     # The HIT only has the worker_id in its title, so we have to extract
     # using mtglobals.worker_id_from_title()
@@ -466,6 +460,9 @@ def get_hit_for_worker(all_hits, worker_id, verbose=False):
     return results[0]
 
 def get_hit_submissions(client, hit_id):
+    """
+    Returns a list where each element is MTurk's info about a particular submission of the HIT with id `hit_id`
+    """
     all_submissions = []
     all_scraped = False
     # Start with a single call
@@ -485,6 +482,9 @@ def get_hit_submissions(client, hit_id):
     return all_submissions
 
 def get_qual_id(client, qual_name):
+    """
+    Gets the MTurk-assigned id for the qualification type with name `qual_name`
+    """
     all_quals = get_all_quals(client)
     matching_quals = [info for info in all_quals if info['Name'] == qual_name]
     if len(matching_quals) == 0:
@@ -495,6 +495,9 @@ def get_qual_id(client, qual_name):
     return qual_id
 
 def get_workers_with_qual(client, qual_name):
+    """
+    Returns (after getting the id for the given qual name via `get_qual_id()`) a list of all worker_ids who have been granted the qualification with name `qual_name`
+    """
     # First get the id for this qual
     qual_id = get_qual_id(client, qual_name)
     all_quals = []
@@ -527,8 +530,7 @@ def get_workers_with_qual(client, qual_name):
 def launch_custom_hit(client, cur_worker_id, cur_offer_amt, stage2_question,
                       stage2_requirements):
     """
-    Launch the custom stage-2 HIT via MTurk API. Returns the raw API response
-    data.
+    Launch the custom stage-2 HIT via MTurk API. Returns the raw API response data.
     """
     # Launch the HIT
     response = client.create_hit(
@@ -625,7 +627,10 @@ def worker_id_from_title(hit_title):
     return worker_id
 
 def write_log(msg):
+    """
+    Writes `msg` out to the log file specified by `log_fpath` (described above)
+    """
     stamp = datetime.datetime.now().isoformat()
-    with open('mt_log.txt', 'a', encoding='utf-8') as outfile:
+    with open(log_fpath, 'a', encoding='utf-8') as outfile:
         outfile.write(f"[{stamp}] {msg}\n")
 
