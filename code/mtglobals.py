@@ -6,8 +6,21 @@ import boto3
 import pytz
 import joblib
 import xmltodict
+import numpy as np
+rng = np.random.default_rng()
 
-### Global vars ###
+### Global params ###
+
+# The list of wages randomly sampled from when generating wage for each HIT
+wage_dist = ['0.50','0.90','0.95','0.98','0.99',
+            '1.00',
+            '1.01','1.02','1.05','1.10','1.50']
+
+# The number of stage-1 HITs to launch (and so, also the number of stage-2 HITs that
+# will be created)
+num_hits = 1000
+
+### Global constants ###
 
 # The qual id for the participation qual
 participant_qual_id = "303SJT1CWE5D23ZEJCT5ZGDLM1P4FN"
@@ -73,8 +86,13 @@ def create_new_qual(client, new_qual_name):
         Description='Participation in the Columbia TextLab workplace survey',
         QualificationTypeStatus='Active'
     )
-    # And now get the id for this new qual num
-    return get_qual_id(client, new_qual_name)
+    # Get the new qual info (as opposed to the request metadata)
+    qual_info = response['QualificationType']
+    # Extract the info we need
+    qual_name = qual_info['Name']
+    qual_id = qual_info['QualificationTypeId']
+    #qual_creation = qual_info['CreationTime']
+    return qual_name, qual_id
 
 # OLD VERSION
 def create_new_qual_old():
@@ -367,6 +385,12 @@ def qual_exists(client, qual_name):
     if len(matching_quals) == 0:
         return False
     return True
+
+def random_wage():
+    """
+    Draws an element, uniformly at random, from the global var wage_dist 
+    """
+    return rng.choice(wage_dist)
 
 def update_current_qual(new_qual_name, new_qual_id, new_qual_num, new_offer_amt):
     info_str = f"{new_qual_name},{new_qual_id},{new_qual_num},{new_offer_amt}"
