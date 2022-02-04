@@ -22,6 +22,9 @@ num_hits = 1000
 
 ### Global constants ###
 
+# The default fpath for the .csv file containing AWS access + secret keys
+default_keys_fpath = "../../IndependentStudyWithJeff/aws/accessKeys.csv"
+
 # The qual id for the participation qual
 participant_qual_id = "303SJT1CWE5D23ZEJCT5ZGDLM1P4FN"
 
@@ -40,6 +43,37 @@ stage2_launched_fpath = os.path.join("..","results_2stage","stage2_launched_work
 stage2_submitted_fpath = os.path.join("..","results_2stage","stage2_submitted_workers.pkl")
 
 ### Global functions ###
+
+def add_posted_worker(cur_worker_id, cur_offer_amt, cur_qual_name, cur_qual_id,
+                      cur_qual_num, custom_url, launched_time):
+    """
+    Once a worker's custom stage-2 HIT has been posted, add their info (and the
+    HIT info) to the .csv at `stage2_launched_fpath` (the global constant above)
+    
+    Returns the fpath of the newly-updated .csv file
+    """
+    # And add to list of already-launched workers
+    launched_fpath = stage2_launched_fpath
+    if not os.path.isfile(launched_fpath):
+        df = pd.DataFrame({'worker_id':[], 'offer_amt':[], 'qual_name':[], 'qual_id':[],
+                           'qual_num':[], 'url':[], 'launched_time':[], 'notified_time':[]})
+        df.to_csv(launched_fpath, index=False)
+    launch_df = pd.read_csv(launched_fpath)
+    # The data we're serializing
+    new_data = pd.DataFrame({
+        'worker_id': [cur_worker_id],
+        'offer_amt': [cur_offer_amt],
+        'qual_name': [cur_qual_name],
+        'qual_id': [cur_qual_id],
+        'qual_num': [cur_qual_num],
+        'url': [custom_url],
+        'launched_time': [launched_time],
+        # This one gets filled in by NotifyStage2
+        'notified_time': [None],
+    })
+    updated_df = pd.concat([launch_df, new_data])
+    updated_df.to_csv(launched_fpath, index=False)
+    return launched_fpath
 
 # Before connecting to MTurk, set up your AWS account and IAM settings as
 # described here:
@@ -78,8 +112,70 @@ def assign_qual_safe(client, worker_id, qual_id, qual_num=0, notify=False):
             SendNotification=notify
         )
         return f"Worker {worker_id} successfully given qual {qual_id}"
+    
+def assign_stage2_quals(client, cur_worker_id, cur_qual_name, cur_qual_id,
+                        cur_qual_num, cur_offer_amt):
+    """
+    Assigns the stage-2-specific quals. The first is the custom qual for this
+    run, with the worker's specifical qual num. The second is the *participation*
+    qual, given to every participant across all runs (to ensure nobody does it
+    twice, across different runs)
+    
+    Returns the raw API response to the `associate_qualification_with_worker()`
+    call (and thus ignores the response to the participation qual assignment! So
+    be careful if something goes wrong with the participation quals -- you can
+    change this to return that API response instead, or both responses in a tuple)
+    """
+    # Now assign the custom qualification
+    print(f"Associating num {cur_qual_num} with worker {cur_worker_id}")
+    response = client.associate_qualification_with_worker(
+        # sandbox id
+        #QualificationTypeId='3Y0FER3934AFGRF24YM9Q00LF2OXKO',
+        # production id, no suffix
+        #QualificationTypeId='3QTU8Z4SHN84U5KCFOM3OI2TK3WGK7', 
+        # production id, Custom02
+        QualificationTypeId=cur_qual_id,
+        #WorkerId='AQU32GXNKCCYS', # jpj251@nyu.edu id
+        #WorkerId='A3IZUHHAA21KBM', # sn2430 worker sandbox id
+        WorkerId=cur_worker_id,
+        IntegerValue=cur_qual_num,
+        SendNotification=True
+    )
+    # And update the info in current_qual.txt
+    update_current_qual(cur_qual_name, cur_qual_id, cur_qual_num, cur_offer_amt)
+    # And finally the participation qual (that everybody gets, regardless of which
+    # custom qual)
+    response_participation = client.associate_qualification_with_worker(
+        # (this is the id for the participation qual)
+        QualificationTypeId='303SJT1CWE5D23ZEJCT5ZGDLM1P4FN',
+        WorkerId=cur_worker_id,
+        IntegerValue=0,
+        SendNotification=False
+    )
+    return response
+    
+def check_launched(launched_df, worker_id):
+    """
+    Check `launched_df` to see if the 2nd-stage hit has already been launched
+    for this worker. If so, return the qual_name, qual_num and offer_amt they
+    were assigned, otherwise return "",-1,-1
+    """
+    if launched_df is None:
+        return "", -1, -1
+    result_df = launched_df[launched_df['worker_id'] == worker_id].copy()
+    if len(result_df) > 0:
+        first_row = result_df.iloc[0]
+        qual_name = first_row['qual_name']
+        qual_num = int(first_row['qual_num'])
+        offer_amt = first_row['offer_amt']
+        return qual_name, qual_num, offer_amt
+    return "", -1, -1
 
 def create_new_qual(client, new_qual_name):
+    """
+    Create a qual with name `new_qual_name`, and return a
+    (new qual name, new qual id) tuple
+    """
     response = client.create_qualification_type(
         Name=new_qual_name,
         Keywords='workplace,survey,custom',
@@ -191,9 +287,15 @@ def download_all_hits(client, start_cutoff=date_cutoff, end_cutoff=None,
         joblib.dump(all_hit_data, download_fpath)
     return all_hit_data
 
-default_keys_fpath = "../../IndependentStudyWithJeff/aws/accessKeys.csv"
 def gen_client(keys_fpath=default_keys_fpath):
-    # By default, HITs are created in the free-to-use Sandbox
+    """
+    By default, HITs are created in the free-to-use Sandbox. Change the top line
+    of code to set it to create the HITs in the real production version of MTurk.
+    
+    `keys_fpath` defaults to the global constant `default_keys_fpath` defined
+    above, but can pass a custom fpath if running on Colab, for example
+    """
+    
     create_hits_in_live = True
 
     environments = {
@@ -238,6 +340,67 @@ def gen_client(keys_fpath=default_keys_fpath):
     print("Your account balance is {}".format(user_balance['AvailableBalance']))
     
     return client, mturk_environment
+
+def gen_custom_hit(cur_worker_id, cur_offer_amt):
+    """
+    Construct custom stage-2 HIT for worker `cur_worker_id`, with offer amount
+    `cur_offer_amt`.
+    
+    Roughly based on the example xml given in this tutorial:
+    https://github.com/aws-samples/mturk-code-samples/blob/master/Python/my_question.xml
+    """
+    # Now construct the custom HIT for this worker
+    # The question we ask the workers is contained in this file.
+    
+    with open("question_stage2.xml", "r", encoding='utf-8') as f:
+        stage2_question = f.read()
+    # Fill in the custom data
+    stage2_question = stage2_question.replace("!worker_id!",cur_worker_id)
+    stage2_question = stage2_question.replace("!offer_amt!",cur_offer_amt)
+    return stage2_question
+
+def gen_timestamp():
+    """
+    Helper function, generates a (string) timestamp string with format YMD_hms, just so
+    the timestamps are uniform across the pipeline.
+    """
+    timestamp = str(datetime.datetime.now()).split(".")[0].replace(" ","_").replace("-","").replace(":","")
+    return timestamp
+
+def gen_qual_restriction(cur_qual_id, cur_qual_num):
+    """
+    Generates the object (dict) specifying the restriction specific to this user's stage-2 HIT (that they
+    have the current-run qual with id `cur_qual_id`, and the specific qual
+    num specified by `cur_qual_num`. Returns list of requirements that can
+    be directly passed to the API's post HIT function
+    
+    Roughly based on this example of using qualification to restrict responses
+    to Workers who have had at least 80% of their assignments approved:
+    http://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QualificationRequirementDataStructureArticle.html#ApiReference_QualificationType-IDs
+    """
+    stage2_requirements = [
+        #{
+        #    'QualificationTypeId': '000000000000000000L0',
+        #    'Comparator': 'GreaterThanOrEqualTo',
+        #    'IntegerValues': [80],
+        #    'RequiredToPreview': True,
+        #},
+        #{
+        #    # WorkplaceSurveyCustom ID in *Sandbox*
+        #    #'QualificationTypeId': '3Y0FER3934AFGRF24YM9Q00LF2OXKO',
+        #    # WorkplaceSurveyCustom ID in *Dev*
+        #    'QualificationTypeId': survey_qual_id,
+        #    'Comparator': 'Exists',
+        #    'ActionsGuarded': 'DiscoverPreviewAndAccept',
+        #},
+        {
+            'QualificationTypeId': cur_qual_id,
+            'Comparator':"In",
+            'IntegerValues':[cur_qual_num],
+            'ActionsGuarded': 'DiscoverPreviewAndAccept',
+        }
+    ]
+    return stage2_requirements
 
 def get_all_quals(client):
     """
@@ -361,6 +524,27 @@ def get_workers_with_qual(client, qual_name):
         all_quals.extend(cur_quals)
     return all_worker_ids
 
+def launch_custom_hit(client, cur_worker_id, cur_offer_amt, stage2_question,
+                      stage2_requirements):
+    """
+    Launch the custom stage-2 HIT via MTurk API. Returns the raw API response
+    data.
+    """
+    # Launch the HIT
+    response = client.create_hit(
+        # 1 assignment bc single custom stage 2 hit
+        MaxAssignments=1,
+        LifetimeInSeconds=86400, # 24 hours
+        AssignmentDurationInSeconds=3600, # 1 hour
+        Reward=cur_offer_amt,
+        Title=f'Custom workplace survey HIT for worker id {cur_worker_id}',
+        Keywords='survey,workplace,work',
+        Description=f'Custom workplace survey HIT for worker id {cur_worker_id}, 30 questions, ~15mins to complete',
+        Question=stage2_question,
+        QualificationRequirements=stage2_requirements,
+    )
+    return response
+
 pacific = pytz.timezone('US/Pacific')
 def localize_datetime(dt_obj):
     """
@@ -368,7 +552,25 @@ def localize_datetime(dt_obj):
     """
     return dt_obj.replace(tzinfo=pacific)
 
+def notify_worker(client, cur_worker_id, custom_msg):
+    """
+    Uses MTurk's `notify_workers()` API function to send `custom_msg` as an
+    email to worker `cur_worker_id`. Returns the raw API response.
+    """
+    response = client.notify_workers(
+        Subject='Custom Workplace Survey 2nd-Stage HIT',
+        MessageText=custom_msg,
+        WorkerIds=[
+            cur_worker_id
+        ]
+    )
+    return response
+
 def parse_stage1_answer(answer_xml):
+    """
+    Parses MTurk's answer XML format and converts the worker's answers to a
+    standard Python dict
+    """
     parse_result = xmltodict.parse(answer_xml)
     answer_data = parse_result['QuestionFormAnswers']
     answers = answer_data['Answer']
@@ -380,6 +582,9 @@ def parse_stage1_answer(answer_xml):
     return answer_dict
 
 def qual_exists(client, qual_name):
+    """
+    Returns True if a qual already exists with name `qual_name`, False otherwise
+    """
     all_quals = get_all_quals(client)
     matching_quals = [info for info in all_quals if info['Name'] == qual_name]
     if len(matching_quals) == 0:
@@ -397,8 +602,24 @@ def update_current_qual(new_qual_name, new_qual_id, new_qual_num, new_offer_amt)
     with open('../results_2stage/current_qual.txt', 'w', encoding='utf-8') as g:
         g.write(info_str)
     print(f"Current qual updated to be: {info_str}")
+    
+def update_launched_worker(cur_worker_id, notified_time):
+    """
+    Updates the .csv containing launch info to have the `notified_time` for
+    worker `cur_worker_id`. Returns the fpath of the newly-updated .csv
+    """
+    # And add to list of already-launched workers
+    launched_df = pd.read_csv(stage2_launched_fpath)
+    # Find the row for this worker and set the notified_time
+    launched_df.at[launched_df['worker_id'] == cur_worker_id, 'notified_time'] = notified_time
+    launched_df.to_csv(launched_fpath, index=False)
+    return launched_fpath
         
 def worker_id_from_title(hit_title):
+    """
+    Helper function, takes the full title of a custom stage-2 HIT and extracts
+    just the worker id for this HIT
+    """
     title_elts = hit_title.split(" ")
     worker_id = title_elts[-1]
     return worker_id
@@ -407,3 +628,4 @@ def write_log(msg):
     stamp = datetime.datetime.now().isoformat()
     with open('mt_log.txt', 'a', encoding='utf-8') as outfile:
         outfile.write(f"[{stamp}] {msg}\n")
+
