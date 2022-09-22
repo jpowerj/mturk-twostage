@@ -1,5 +1,3 @@
-<HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
-  <HTMLContent><![CDATA[
 <!DOCTYPE html>
 <html>
  <head>
@@ -76,16 +74,30 @@ function stringStartsWith(str, search, pos) {
   <h2>Instructions</h2>
   <p>We are conducting an academic survey about the conditions of the modern workplace.</p>
 
-    <p>
-        This survey HIT has been custom-generated for you based on your worker ID, !worker_id!, and will be available for the next 24 hours. If you are willing to fill out an additional survey with approximately 30 questions (about 30 seconds each) for this HIT's reward amount (!offer_amt!), please (1) accept this HIT, (2) fill out the survey at the link below, and (3) upon completion, copy-and-paste the survey completion code into the text box below. Your submission will be checked for accuracy and then approved or rejected within 24 hours.
-    </p>
+  <p>This survey proceeds in <strong>two stages</strong>:</p>
+
+  <ol>
+	  <li>First, please <strong>accept this HIT</strong> and then answer three quick questions about yourself below. As long as your responses are valid, your submission of this HIT will be auto-approved and you will receive the $0.10 reward for completion of this HIT.</li>
+	  <li>Immediately upon submission, you will also receive an email containing a link to a <strong>second, custom HIT</strong> created for you, with a custom HIT reward amount. If you are willing to fill out an additional survey for this reward amount, with approximately 30 questions (about 30 seconds each), please click the link in your email to access and accept the second-stage HIT.</li>
+  </ol>
+
+  <p>This first-stage HIT may not be submitted more than once, and the second-stage HIT sent to your email will only be generated once per worker ID. Additional HIT submissions from the same worker will be rejected.</p>
+  
   <p>
-    Survey Link:
-    <a href="https://cumc.co1.qualtrics.com/jfe/form/SV_a4CDHnnuf6xgEN8?offer=!offer_amt!&amp;mt_id=!worker_id!" id="surveyLink">Click here to launch the survey</a>
+    <label for="age">Please enter your age, in years:</label>
+    <input class="form-control" id="age" name="age" required="" type="text" />
   </p>
   <p>
-    <label for="codeInput">Enter Survey Completion Code:</label></td>
-	<input id="codeInput" name="surveyCode" style="width: 100%;" type="text" />
+    <label for="onlinehrs">Hours per week spent online doing tasks for money:</label>
+    <input class="form-control" id="onlinehrs" name="onlinehrs" type="text" />
+  </p>
+  <p>
+    <label for="reason">Primary reason for participation:</label>
+    <select class="form-control" id="reason" name="reason">
+      <option disabled="disabled" hidden="" selected="selected" value="">-- Please select an option --</option>
+      <option value="money">Make money</option>
+      <option value="skills">Learn new skills</option><option value="fun">Have fun</option>
+    </select>
   </p>
   <p>
     <input type='submit' id='submitButton' value='Submit' class="btn btn-primary" />
@@ -94,7 +106,3 @@ function stringStartsWith(str, search, pos) {
 <script language='Javascript'>turkSetAssignmentID();</script>
 </body>
 </html>
-]]>
-  </HTMLContent>
-  <FrameHeight>450</FrameHeight>
-</HTMLQuestion>
