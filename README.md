@@ -25,7 +25,7 @@ PARTICIPATION_QUAL_ID=3JNQJJEQY16FR7XUFO39M804EY0UJD
 3. Following the instructions [here](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html), generate an Access ID/Secret Access Key pair for your AWS account and add those to the `.env` file as well, like so:
 
 ```
-AWS_ACCESS_KEY= AKIAIOSFODNN7EXAMPLE
+AWS_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
 AWS_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 ```
 
