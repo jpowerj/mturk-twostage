@@ -1,0 +1,22 @@
+<!-- You must include this JavaScript file -->
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+
+<!-- You must include crowd-form so that your task submits answers to MTurk -->
+<crowd-form answer-format="flatten-objects">
+
+    <h3>Instructions</h3>
+    <p>Please transcribe the following 5-minute audio clip (ignore "umms", "hmms", "uhs" and other non-textual phrases).</p>
+
+    <audio controls="">
+
+        <!-- Your audio file URL will be substituted for the "audio_url" variable when
+               you publish a batch with an input file containing multiple audio file URLs -->
+        <source src="!audio_url!" type="audio/mpeg" />
+
+    </audio>
+
+    <crowd-text-area name="transcription" placeholder="Transcribe the audio here..." rows="6" required></crowd-text-area>
+</crowd-form>

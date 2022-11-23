@@ -18,9 +18,6 @@ rng = np.random.default_rng()
 # The fpath for the .env file containing e.g. AWS access + secret keys
 dotenv_fpath = ".env"
 
-# The qual id for the participation qual
-participant_qual_id = "303SJT1CWE5D23ZEJCT5ZGDLM1P4FN"
-
 # The timezone used to localize timestamps
 local_tz = pytz.timezone('US/Pacific')
 
@@ -116,7 +113,8 @@ def draw_random_wage():
     return rng.choice(wage_dist)
 
 
-def gen_custom_hit(xml_fpath, cur_worker_id, cur_offer_amt):
+def gen_custom_hit(xml_fpath, survey_url, cur_worker_id, cur_offer_amt,
+                   cur_audio_id):
     """
     Construct custom stage-2 HIT for worker `cur_worker_id`, with offer amount
     `cur_offer_amt`.
@@ -127,8 +125,10 @@ def gen_custom_hit(xml_fpath, cur_worker_id, cur_offer_amt):
     with open(xml_fpath, "r", encoding='utf-8') as f:
         stage2_question = f.read()
     # Fill in the custom data
-    stage2_question = stage2_question.replace("!worker_id!",cur_worker_id)
-    stage2_question = stage2_question.replace("!offer_amt!",cur_offer_amt)
+    stage2_question = stage2_question.replace("!survey_url!", survey_url)
+    stage2_question = stage2_question.replace("!worker_id!", cur_worker_id)
+    stage2_question = stage2_question.replace("!offer_amt!", cur_offer_amt)
+    stage2_question = stage2_question.replace("!audio_id!", cur_audio_id)
     return stage2_question
 
 
@@ -259,6 +259,7 @@ def parse_stage1_answer(answer_xml):
     parse_result = xmltodict.parse(answer_xml)
     answer_data = parse_result['QuestionFormAnswers']
     answers = answer_data['Answer']
+    #print(answers)
     answer_dict = {d['QuestionIdentifier']: d['FreeText'] for d in answers}
     # But make sure that empty responses just get the empty string
     for qid in ['age','onlinehrs','reason']:
@@ -290,7 +291,7 @@ def update_launched_worker(cur_worker_id, notified_time):
     # And add to list of already-launched workers
     launched_df = pd.read_csv(stage2_launched_fpath)
     # Find the row for this worker and set the notified_time
-    launched_df.at[launched_df['worker_id'] == cur_worker_id, 'notified_time'] = notified_time
+    launched_df.loc[launched_df['worker_id'] == cur_worker_id, 'notified_time'] = notified_time
     launched_df.to_csv(stage2_launched_fpath, index=False)
     return stage2_launched_fpath
 

@@ -19,7 +19,8 @@ class MTClient:
         `dotenv_fpath` defaults to ".env", but you can pass a custom fpath if
         running on Colab, for example
         """
-        dotenv.load_dotenv(dotenv_fpath)
+        print(f"Loading environment variables from {dotenv_fpath}")
+        dotenv.load_dotenv(dotenv_fpath, override=True)
         self.stage1_reward = os.getenv("STAGE1_REWARD")
         environments = {
             "live": {
@@ -35,8 +36,9 @@ class MTClient:
                 "reward": self.stage1_reward
             },
         }
-        self.use_sandbox = os.getenv("SANDBOX")
-        self.mturk_environment = environments["live"] if self.use_sandbox else environments["sandbox"]
+        self.use_sandbox = os.getenv("ENVIRONMENT").lower() == "sandbox"
+        print("Using MTurk requester sandbox") if self.use_sandbox else print("Using LIVE MTurk requester API")
+        self.mturk_environment = environments["sandbox"] if self.use_sandbox else environments["live"]
         # Load access+secret keys
         access_key = os.getenv("AWS_ACCESS_KEY")
         secret_key = os.getenv("AWS_SECRET_KEY")
@@ -58,6 +60,12 @@ class MTClient:
         user_balance = self.get_account_balance()
         # In Sandbox this always returns $10,000. In live, it will be your acutal balance.
         print("Your account balance is {}".format(user_balance['AvailableBalance']))
+
+    def approve_assignment(self, assignment_id):
+        return self.boto_client.approve_assignment(
+            AssignmentId=assignment_id,
+            OverrideRejection=True
+        )
 
     def assign_qual_safe(self, worker_id, qual_id, qual_num=0, notify=False):
         """
@@ -108,7 +116,7 @@ class MTClient:
             QualificationTypeId=cur_qual_id,
             WorkerId=cur_worker_id,
             IntegerValue=cur_qual_num,
-            SendNotification=True
+            SendNotification=False
         )
         # And update the info in current_qual.txt
         mtglobals.update_current_qual(cur_qual_name, cur_qual_id, cur_qual_num, cur_offer_amt)
@@ -147,7 +155,7 @@ class MTClient:
     def create_hit(self, num_hits, reward, title, keywords, description,
                    question, requirements):
         return self.boto_client.create_hit(
-            MaxAssignments=mtglobals.num_hits,
+            MaxAssignments=num_hits,
             LifetimeInSeconds=86400, # 24 hours
             AssignmentDurationInSeconds=3600, # 1 hour
             Reward=reward,
@@ -252,14 +260,16 @@ class MTClient:
         qual_list = qual_response['QualificationTypes']
         return qual_list
 
-    def get_hit_submissions(self, hit_id):
+    def get_hit_submissions(self, hit_id, verbose=False):
         """
         Returns a list where each element is MTurk's info about a particular submission of the HIT with id `hit_id`
         """
+        vprint = print if verbose else lambda x: None
         all_submissions = []
         all_scraped = False
         # Start with a single call
         response = self.boto_client.list_assignments_for_hit(HITId=hit_id)
+        vprint(response)
         all_submissions.extend(response['Assignments'])
         if 'NextToken' in response:
             cur_next_token = response['NextToken']
@@ -343,6 +353,7 @@ class MTClient:
         stage1_df.to_csv(csv_fpath, index=False)
         print(f"Worker list saved to {mtglobals.stage1_submit_list_fpath}")
         print(f"csv saved to {csv_fpath}.")
+        return stage1_df
 
     def get_workers_with_qual(self, qual_name):
         """

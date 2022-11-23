@@ -80,22 +80,22 @@ function stringStartsWith(str, search, pos) {
 
   <ol>
 	  <li>First, please <strong>accept this HIT</strong> and then answer three quick questions about yourself below. As long as your responses are valid, your submission of this HIT will be auto-approved and you will receive the $0.10 reward for completion of this HIT.</li>
-	  <li>Immediately upon submission, you will also receive an email containing a link to a <strong>second, custom HIT</strong> created for you, with a custom HIT reward amount. If you are willing to fill out an additional survey for this reward amount, with approximately 30 questions (about 30 seconds each), please click the link in your email to access and accept the second-stage HIT.</li>
+	  <li>Shortly after your submission, you will also receive an email containing a link to a <strong>second, custom HIT</strong> created for you, with a custom HIT reward amount. If you are willing to fill out an additional survey for this reward amount, with approximately <strong>20 questions</strong> (30 seconds each) followed by a 1-minute <strong>audio transcription</strong> task, please click the link in your email to access and accept the second-stage HIT.</li>
   </ol>
 
   <p>This first-stage HIT may not be submitted more than once, and the second-stage HIT sent to your email will only be generated once per worker ID. Additional HIT submissions from the same worker will be rejected.</p>
   
   <p>
     <label for="age">Please enter your age, in years:</label>
-    <input class="form-control" id="age" name="age" required="" type="text" />
+    <input class="form-control" id="age" name="age" type="text" required />
   </p>
   <p>
     <label for="onlinehrs">Hours per week spent online doing tasks for money:</label>
-    <input class="form-control" id="onlinehrs" name="onlinehrs" type="text" />
+    <input class="form-control" id="onlinehrs" name="onlinehrs" type="text" required />
   </p>
   <p>
     <label for="reason">Primary reason for participation:</label>
-    <select class="form-control" id="reason" name="reason">
+    <select class="form-control" id="reason" name="reason" required>
       <option disabled="disabled" hidden="" selected="selected" value="">-- Please select an option --</option>
       <option value="money">Make money</option>
       <option value="skills">Learn new skills</option><option value="fun">Have fun</option>
